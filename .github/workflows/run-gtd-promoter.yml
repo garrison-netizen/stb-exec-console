@@ -1,0 +1,36 @@
+name: Run GTD Promoter
+# 15-minute polling cadence per ADR-007 §7.
+# Single-instance per the ADR — never schedule a second workflow against the
+# same Capture Inbox without coordinating status flips.
+
+on:
+  schedule:
+    - cron: '*/15 * * * *'
+  workflow_dispatch: # allow manual trigger from the Actions tab
+
+concurrency:
+  group: gtd-promoter
+  cancel-in-progress: false
+
+jobs:
+  poll:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Trigger Promoter endpoint
+        env:
+          BASE_URL: ${{ secrets.CONSOLE_BASE_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          set -euo pipefail
+          if [ -z "${BASE_URL:-}" ] || [ -z "${CRON_SECRET:-}" ]; then
+            echo "Missing CONSOLE_BASE_URL or CRON_SECRET secret" >&2
+            exit 1
+          fi
+          curl -sS -X POST "$BASE_URL/api/operators/gtd-promoter" \
+            -H "Authorization: Bearer $CRON_SECRET" \
+            -H "Content-Type: application/json" \
+            -d '{}' \
+            --fail-with-body \
+            --max-time 60
+          echo
