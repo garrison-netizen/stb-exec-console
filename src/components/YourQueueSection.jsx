@@ -4,13 +4,16 @@ import { ROUTING_AGENTS } from '../state/mockData.js';
 import { relativeAge } from '../state/queue.js';
 
 // "Your captured thoughts" — the purple-accented section. Inline capture form
-// pins to the localStorage queue; per-item route chips assign an agent
-// destination (writes to Brain pending Architect's call on routing mechanism).
+// pins to the localStorage queue; per-item route chips tag a destination, and
+// Send pushes the item to the Intake Queue as an actual Brain row when the
+// destination has been wired (currently only Architect — see AGENT_TO_ROUTING_TAG).
 export default function YourQueueSection({
   items,
   onCapture,
   onRoute,
   onDismiss,
+  onSendToBrain,
+  routableAgents, // Set of agent labels currently writable to Brain
   onOpenSummary,
 }) {
   const [draft, setDraft] = useState('');
@@ -31,7 +34,7 @@ export default function YourQueueSection({
         <span className="section-count yours">{items.length}</span>
         <span
           className="mocked-tag"
-          title="Local-only for v1 — Brain-side queue schema pending Architect's routing mechanism call"
+          title={`Local drafts; Send pushes to Brain via Intake Queue. Live destinations: ${[...(routableAgents || [])].join(', ') || 'none yet'}.`}
         >
           local
         </span>
@@ -78,17 +81,36 @@ export default function YourQueueSection({
               <>
                 <div className="route-chips">
                   <span className="route-label">Route to:</span>
-                  {ROUTING_AGENTS.map((a) => (
-                    <button
-                      key={a}
-                      type="button"
-                      className={`chip-route ${it.routedTo === a ? 'active' : ''}`}
-                      onClick={() => onRoute(it.id, a)}
-                    >
-                      {a}
-                    </button>
-                  ))}
+                  {ROUTING_AGENTS.map((a) => {
+                    const live = routableAgents?.has?.(a);
+                    return (
+                      <button
+                        key={a}
+                        type="button"
+                        className={`chip-route ${it.routedTo === a ? 'active' : ''}`}
+                        onClick={() => onRoute(it.id, a)}
+                        title={live ? `Send → ${a} is live (writes Intake Queue row)` : `${a} routing not yet live — Architect adds the tag when ready`}
+                      >
+                        {a}{live ? '' : ' ·'}
+                      </button>
+                    );
+                  })}
                 </div>
+                <button
+                  type="button"
+                  className="btn primary"
+                  disabled={!it.routedTo || !routableAgents?.has?.(it.routedTo)}
+                  onClick={() => onSendToBrain?.(it.id)}
+                  title={
+                    !it.routedTo
+                      ? 'Pick a destination first'
+                      : routableAgents?.has?.(it.routedTo)
+                      ? `Send to ${it.routedTo} (Intake Queue row)`
+                      : `${it.routedTo} isn't a live Brain destination yet`
+                  }
+                >
+                  Send → Brain
+                </button>
                 <button
                   type="button"
                   className="btn danger"

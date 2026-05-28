@@ -21,6 +21,14 @@ import {
 // Source Narrative Intake page — Architect's pointer for "tell the story".
 const SOURCE_NARRATIVE_INTAKE_URL = 'https://www.notion.so/3651c57ac02b810eb1b4f724dec7c99d';
 
+// Map a route-chip agent label to the Intake Queue `Routing tag` value.
+// Architect extended Routing tag with "To: Architect" on 2026-05-28; other
+// agent destinations land as he ships more options.
+const AGENT_TO_ROUTING_TAG = {
+  Architect: 'To: Architect',
+};
+const ROUTABLE_AGENTS = new Set(Object.keys(AGENT_TO_ROUTING_TAG));
+
 // Agent Freshness staleness thresholds (hours since Last loaded).
 const FRESH_HRS = 24;   // <24h → ok
 const STALE_HRS = 120;  // 24–120h → stale; >120h or null → bad
@@ -165,6 +173,58 @@ export default function App() {
     setQueue(routeThought(id, next));
   }
   function dismiss(id) { setQueue(dismissThought(id)); }
+
+  // Send a captured thought to the Brain via the Intake Queue.
+  // Only fires when the item's routedTo is in ROUTABLE_AGENTS — other chips
+  // tag locally only, pending Architect's per-destination Routing tag entries.
+  async function sendThoughtToBrain(id) {
+    const item = queue.find((q) => q.id === id);
+    if (!item) return;
+    const routingTag = AGENT_TO_ROUTING_TAG[item.routedTo];
+    if (!routingTag) {
+      alert(`Can't send yet — "${item.routedTo}" isn't a live Brain destination. Only ${[...ROUTABLE_AGENTS].join(', ')} routable right now.`);
+      return;
+    }
+    try {
+      const res = await fetch('/api/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          submissionType: 'general_note',
+          title: item.text,
+          body: `Captured via Executive Console on ${new Date(item.capturedAt).toISOString()}.\n\nDestination chip: ${item.routedTo}. Routing tag: ${routingTag}.`,
+          routingTag,
+        }),
+      });
+      const json = await res.json();
+      if (!json.ok) throw new Error(json.error || 'send failed');
+
+      // Remove from local queue — the row lives in Brain now.
+      setQueue(dismissThought(id));
+      setOverlay({
+        open: true,
+        payload: {
+          sectionTag: '💭 Sent to Brain',
+          title: item.text,
+          meta: {
+            'Routed to': item.routedTo,
+            'Routing tag': routingTag,
+            Captured: relativeAge(item.capturedAt),
+            'Sent at': new Date().toLocaleString(),
+          },
+          summary:
+            `Created as an Intake Queue row, <code>Captured by = Console</code>, <code>Status = Pending review</code>. ${item.routedTo}'s next /refresh will surface it.`,
+          actions: [
+            { kind: 'primary', label: 'Open in Notion ↗', onClick: () => window.open(json.url, '_blank', 'noopener,noreferrer') },
+            { kind: 'ghost', label: 'Close', onClick: () => setOverlay({ open: false, payload: null }) },
+          ],
+        },
+      });
+    } catch (err) {
+      console.error('Send to Brain failed:', err);
+      alert(`Failed to send: ${err.message}`);
+    }
+  }
 
   function openSummaryForQueueItem(id) {
     const item = queue.find((q) => q.id === id);
@@ -321,6 +381,8 @@ export default function App() {
           onCapture={capture}
           onRoute={route}
           onDismiss={dismiss}
+          onSendToBrain={sendThoughtToBrain}
+          routableAgents={ROUTABLE_AGENTS}
           onOpenSummary={openSummaryForQueueItem}
         />
 
