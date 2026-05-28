@@ -1,36 +1,14 @@
-export default function Hero({ count, queueCount, channelCount, lastReconciled, onReconcile }) {
-  const reconcileDisabled = channelCount === 0;
+// Slim hero — Reconcile button now lives in the sidebar (co-located with
+// Agent Freshness for the visibility-layer story).
+export default function Hero({ count, queueCount, sourceCount, decisionCount, externalCount, lastReconciled }) {
   return (
     <div className="hero">
-      <div className="hero-left">
-        <h1>
-          The Brain needs you for
-          <span className="hero-count">{count} item{count === 1 ? '' : 's'}</span>
-        </h1>
-        <div className="sub">
-          You have {queueCount} thought{queueCount === 1 ? '' : 's'} in your queue
-          {' · '}
-          channel has {channelCount} agent-relay item{channelCount === 1 ? '' : 's'}
-          {' · '}
-          last reconciled {lastReconciled}
-        </div>
+      <h1>
+        The Brain needs you for<span className="n">{count}</span>item{count === 1 ? '' : 's'}
+      </h1>
+      <div className="sub">
+        {queueCount} captured · {sourceCount} source narrative{sourceCount === 1 ? '' : 's'} · {decisionCount} decision{decisionCount === 1 ? '' : 's'} · {externalCount} external hold{externalCount === 1 ? '' : 's'} · last reconciled {lastReconciled}
       </div>
-      <button
-        type="button"
-        className="reconcile-btn"
-        onClick={onReconcile}
-        disabled={reconcileDisabled}
-        title={reconcileDisabled ? 'Nothing to reconcile' : 'Acknowledge + sync all agent-relay items'}
-        style={reconcileDisabled ? { opacity: 0.55, cursor: 'not-allowed' } : undefined}
-      >
-        <span className="reconcile-bolt">⚡</span>
-        <div>
-          Reconcile Channel
-          <span className="reconcile-sub">
-            {reconcileDisabled ? 'all clear' : `clear ${channelCount} item${channelCount === 1 ? '' : 's'}`}
-          </span>
-        </div>
-      </button>
     </div>
   );
 }

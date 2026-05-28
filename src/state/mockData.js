@@ -92,5 +92,20 @@ export const DOMAINS = {
   },
 };
 
-// Agents a captured thought can be routed to.
-export const ROUTING_AGENTS = ['Architect', 'Advisor', 'Code', 'Personal Brain', 'Obsidian'];
+// Agents a captured thought can be routed to (canonical roster, 2026-05-28).
+// Personal Mentor doesn't need STB Brain channel access — operates on Obsidian as
+// its data store. Kept in the chip list because captured personal thoughts still
+// need a destination; mechanism TBD (open Architect question on routing).
+export const ROUTING_AGENTS = ['Architect', 'Executive Advisor', 'Code', 'File Steward', 'Personal Mentor'];
+
+// Sidebar Agent Freshness — MOCK for v1. Real wiring depends on the
+// multi-agent freshness contract extension owed by Architect (see proposal
+// 36e1c57a-c02b-8141-9240-fd919f0550c5).
+// state: 'ok' (green dot) | 'stale' (gold) | 'bad' (red)
+export const MOCK_AGENT_FRESHNESS = [
+  { name: 'Architect',         state: 'bad',   ts: '5d stale' },
+  { name: 'Executive Advisor', state: 'stale', ts: '3d stale' },
+  { name: 'Code',              state: 'ok',    ts: 'now'      },
+  { name: 'File Steward',      state: 'stale', ts: '4d stale' },
+  { name: 'Personal Mentor',   state: 'bad',   ts: '9d stale' },
+];
