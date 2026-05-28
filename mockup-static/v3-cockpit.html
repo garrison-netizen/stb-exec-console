@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>STB Executive Console — v3 Cockpit</title>
+  <style>
+    :root {
+      --bg: #0a0c12;
+      --panel: #11141d;
+      --panel-2: #181c28;
+      --panel-3: #1f2330;
+      --line: #232839;
+      --line-bright: #2e3346;
+      --text: #d8dde9;
+      --text-dim: #7a8294;
+      --text-faint: #4d5466;
+      --text-bright: #ffffff;
+      --accent: #5f8dff;
+      --accent-soft: #1a2547;
+      --gold: #f7b32b;
+      --green: #3ed598;
+      --red: #ff5a5f;
+      --purple: #b07cf9;
+      --mono: 'JetBrains Mono', 'SF Mono', 'Consolas', monospace;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      font-size: 13px;
+      line-height: 1.4;
+      min-height: 100vh;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      min-height: 100vh;
+    }
+
+    /* ─── SIDEBAR ─── */
+    .side {
+      background: var(--panel);
+      border-right: 1px solid var(--line);
+      padding: 18px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow-y: auto;
+    }
+    .brand {
+      padding-bottom: 14px;
+      border-bottom: 1px solid var(--line);
+    }
+    .brand .word {
+      font-size: 9.5px;
+      letter-spacing: 0.18em;
+      color: var(--text-faint);
+      font-weight: 700;
+    }
+    .brand .name {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text-bright);
+      margin-top: 2px;
+    }
+    .brand .live {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      margin-top: 6px;
+      font-size: 9.5px;
+      color: var(--green);
+      font-family: var(--mono);
+      letter-spacing: 0.05em;
+    }
+    .brand .live::before {
+      content: '';
+      width: 5px; height: 5px;
+      background: var(--green);
+      border-radius: 50%;
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.35} }
+
+    .panel-head {
+      font-size: 9.5px;
+      font-weight: 800;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--text-faint);
+      margin-bottom: 8px;
+    }
+    .rocks-list {
+      list-style: none;
+      font-size: 11.5px;
+    }
+    .rocks-list li {
+      padding: 6px 0 6px 16px;
+      border-left: 2px solid var(--gold);
+      margin-bottom: 6px;
+      color: var(--text);
+      position: relative;
+    }
+    .rocks-list .rd {
+      font-family: var(--mono);
+      font-size: 9px;
+      letter-spacing: 0.06em;
+      color: var(--text-faint);
+      text-transform: uppercase;
+      display: block;
+      margin-bottom: 2px;
+    }
+    .rocks-list .rt { font-size: 11.5px; line-height: 1.35; }
+
+    .filter-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+    }
+    .fchip {
+      background: var(--panel-2);
+      border: 1px solid var(--line);
+      padding: 3px 9px;
+      border-radius: 3px;
+      font-size: 10.5px;
+      color: var(--text-dim);
+      cursor: pointer;
+      font-family: inherit;
+    }
+    .fchip:hover { color: var(--text); border-color: var(--accent); }
+    .fchip.on {
+      background: var(--accent-soft);
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    .stat-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+    }
+    .stat {
+      background: var(--panel-2);
+      border: 1px solid var(--line);
+      padding: 9px 10px;
+      border-radius: 4px;
+    }
+    .stat .v {
+      font-family: var(--mono);
+      font-size: 17px;
+      font-weight: 700;
+      color: var(--text-bright);
+      font-feature-settings: 'tnum';
+    }
+    .stat .v.warn { color: var(--gold); }
+    .stat .v.bad { color: var(--red); }
+    .stat .v.ok { color: var(--green); }
+    .stat .l {
+      font-size: 9px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-faint);
+      margin-top: 2px;
+    }
+
+    .agents-list {
+      font-size: 11px;
+      list-style: none;
+    }
+    .agents-list li {
+      display: flex;
+      justify-content: space-between;
+      padding: 5px 0;
+      border-bottom: 1px solid var(--line);
+    }
+    .agents-list li:last-child { border-bottom: none; }
+    .agents-list .ag { color: var(--text); font-weight: 600; }
+    .agents-list .ts {
+      font-family: var(--mono);
+      font-size: 10px;
+      color: var(--text-faint);
+    }
+    .agents-list .ts.stale { color: var(--gold); }
+    .agents-list .ts.bad { color: var(--red); }
+    .agents-list .ts.ok { color: var(--green); }
+
+    .reconcile {
+      margin-top: auto;
+      background: linear-gradient(180deg, var(--accent), #3e6bd9);
+      border: none;
+      color: white;
+      font-family: inherit;
+      font-weight: 700;
+      padding: 14px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 13px;
+      letter-spacing: 0.02em;
+      box-shadow: 0 0 0 1px rgba(95,141,255,0.3);
+    }
+    .reconcile .sub {
+      display: block;
+      font-size: 9.5px;
+      font-weight: 500;
+      opacity: 0.85;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-top: 2px;
+      font-family: var(--mono);
+    }
+
+    /* ─── MAIN ─── */
+    .main {
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+    }
+    .topbar {
+      background: var(--panel);
+      border-bottom: 1px solid var(--line);
+      padding: 10px 22px;
+      display: flex;
+      gap: 22px;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 5;
+    }
+    .metric {
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
+    }
+    .metric .n {
+      font-family: var(--mono);
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--text-bright);
+      font-feature-settings: 'tnum';
+    }
+    .metric .n.gold { color: var(--gold); }
+    .metric .n.red { color: var(--red); }
+    .metric .l {
+      font-size: 9.5px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-faint);
+    }
+    .topbar .sep { width: 1px; height: 22px; background: var(--line); }
+    .topbar .ts {
+      margin-left: auto;
+      font-family: var(--mono);
+      font-size: 10.5px;
+      color: var(--text-faint);
+    }
+
+    .content {
+      padding: 18px 22px 80px;
+      flex: 1;
+    }
+
+    .sec {
+      margin-bottom: 22px;
+    }
+    .sec-head {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding-bottom: 6px;
+      margin-bottom: 8px;
+      border-bottom: 1px solid var(--line);
+    }
+    .sec-name {
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--text-bright);
+    }
+    .sec-count {
+      font-family: var(--mono);
+      font-size: 10px;
+      color: var(--text-faint);
+      background: var(--panel-2);
+      padding: 1px 6px;
+      border-radius: 3px;
+      font-feature-settings: 'tnum';
+    }
+    .sec-count.urgent { color: var(--red); background: rgba(255,90,95,0.1); }
+
+    .row {
+      display: grid;
+      grid-template-columns: 14px 1fr auto auto auto;
+      gap: 10px;
+      padding: 6px 4px;
+      border-bottom: 1px solid var(--line);
+      align-items: center;
+      cursor: pointer;
+    }
+    .row:hover { background: var(--panel-2); }
+    .row .marker {
+      width: 5px; height: 5px;
+      border-radius: 50%;
+      background: var(--text-faint);
+      justify-self: center;
+    }
+    .row .marker.urgent { background: var(--red); }
+    .row .marker.warn { background: var(--gold); }
+    .row .marker.your { background: var(--purple); }
+    .row .title {
+      font-size: 12.5px;
+      color: var(--text-bright);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .row .tag {
+      font-family: var(--mono);
+      font-size: 9.5px;
+      padding: 1px 6px;
+      border-radius: 3px;
+      letter-spacing: 0.04em;
+      color: var(--text-dim);
+      background: var(--panel-2);
+      border: 1px solid var(--line);
+    }
+    .row .tag.dom { color: var(--gold); border-color: rgba(247,179,43,0.3); background: rgba(247,179,43,0.05); }
+    .row .tag.per { color: var(--purple); border-color: rgba(176,124,249,0.3); background: rgba(176,124,249,0.05); }
+    .row .age {
+      font-family: var(--mono);
+      font-size: 10px;
+      color: var(--text-faint);
+      font-feature-settings: 'tnum';
+    }
+    .row .age.warn { color: var(--gold); }
+    .row .age.bad { color: var(--red); }
+    .row .actions {
+      font-family: var(--mono);
+      font-size: 10px;
+      color: var(--text-faint);
+      letter-spacing: 0.03em;
+    }
+    .row .actions kbd {
+      background: var(--panel-3);
+      border: 1px solid var(--line-bright);
+      padding: 1px 5px;
+      border-radius: 3px;
+      font-family: inherit;
+      color: var(--text);
+      margin: 0 1px;
+    }
+
+    .your-row .title { color: var(--text); }
+
+    .capture-row {
+      display: grid;
+      grid-template-columns: 14px 1fr auto;
+      gap: 10px;
+      padding: 6px 4px;
+      border-bottom: 1px dashed var(--line);
+      align-items: center;
+    }
+    .capture-row .glyph {
+      color: var(--purple);
+      font-family: var(--mono);
+      text-align: center;
+    }
+    .capture-row input {
+      background: transparent;
+      border: none;
+      color: var(--text);
+      font-family: inherit;
+      font-size: 12.5px;
+      outline: none;
+    }
+    .capture-row input::placeholder { color: var(--text-faint); font-style: italic; }
+    .capture-row .pin {
+      font-family: var(--mono);
+      font-size: 9.5px;
+      letter-spacing: 0.08em;
+      color: var(--purple);
+      background: rgba(176,124,249,0.1);
+      border: 1px solid rgba(176,124,249,0.4);
+      padding: 2px 8px;
+      border-radius: 3px;
+      cursor: pointer;
+      font-family: inherit;
+    }
+
+    .footer-bar {
+      position: fixed;
+      bottom: 0; left: 280px; right: 0;
+      background: var(--panel);
+      border-top: 1px solid var(--line);
+      padding: 8px 22px;
+      display: flex;
+      gap: 16px;
+      align-items: center;
+      font-family: var(--mono);
+      font-size: 10.5px;
+      color: var(--text-faint);
+    }
+    .footer-bar .input {
+      flex: 1;
+      background: var(--bg);
+      border: 1px solid var(--line);
+      border-radius: 4px;
+      padding: 6px 10px;
+      color: var(--text);
+      font-family: inherit;
+      font-size: 11.5px;
+      outline: none;
+    }
+    .footer-bar .key {
+      background: var(--panel-3);
+      border: 1px solid var(--line-bright);
+      padding: 1px 6px;
+      border-radius: 3px;
+      color: var(--text);
+    }
+  </style>
+</head>
+<body>
+<div class="grid">
+
+  <!-- ─── SIDEBAR ─── -->
+  <aside class="side">
+    <div class="brand">
+      <div class="word">SPINDLETAP</div>
+      <div class="name">Executive Console</div>
+      <span class="live">BRAIN v4.6 LIVE</span>
+    </div>
+
+    <div>
+      <div class="panel-head">Q2 ROCKS</div>
+      <ul class="rocks-list">
+        <li><span class="rd">BREWERY</span><span class="rt">Hit Q2 distro target — Houston + Austin</span></li>
+        <li><span class="rd">COFFEE</span><span class="rt">Summer menu + seasonal drop</span></li>
+        <li><span class="rd">THC</span><span class="rt">5mg singles food-service launch</span></li>
+        <li><span class="rd">BJJ</span><span class="rt">Purple belt grading</span></li>
+        <li><span class="rd">FAMILY</span><span class="rt">Big Bend Aug planned + booked</span></li>
+        <li><span class="rd">SPANISH</span><span class="rt">20 min daily; B1 by Sept</span></li>
+      </ul>
+    </div>
+
+    <div>
+      <div class="panel-head">FOCUS</div>
+      <div class="filter-chips">
+        <button class="fchip on">all</button>
+        <button class="fchip">brewery</button>
+        <button class="fchip">coffee</button>
+        <button class="fchip">texzas</button>
+        <button class="fchip">thc</button>
+        <button class="fchip">family</button>
+        <button class="fchip">health</button>
+        <button class="fchip">spanish</button>
+        <button class="fchip">bjj</button>
+        <button class="fchip">+</button>
+      </div>
+    </div>
+
+    <div>
+      <div class="panel-head">SYSTEM STATUS</div>
+      <div class="stat-grid">
+        <div class="stat"><div class="v gold">9</div><div class="l">need you</div></div>
+        <div class="stat"><div class="v">3</div><div class="l">queue</div></div>
+        <div class="stat"><div class="v ok">0</div><div class="l">stale ≤2d</div></div>
+        <div class="stat"><div class="v bad">2</div><div class="l">stale &gt;5d</div></div>
+      </div>
+    </div>
+
+    <div>
+      <div class="panel-head">AGENT FRESHNESS</div>
+      <ul class="agents-list">
+        <li><span class="ag">Architect</span><span class="ts bad">5d</span></li>
+        <li><span class="ag">Advisor</span><span class="ts stale">3d</span></li>
+        <li><span class="ag">Code</span><span class="ts ok">now</span></li>
+        <li><span class="ag">Personal Brain</span><span class="ts bad">9d</span></li>
+      </ul>
+    </div>
+
+    <button class="reconcile">
+      ⚡ RECONCILE
+      <span class="sub">PUSH · PULL · SURFACE</span>
+    </button>
+  </aside>
+
+  <!-- ─── MAIN ─── -->
+  <main class="main">
+
+    <div class="topbar">
+      <div class="metric"><span class="n gold">9</span><span class="l">needs you</span></div>
+      <div class="sep"></div>
+      <div class="metric"><span class="n">3</span><span class="l">unrouted</span></div>
+      <div class="sep"></div>
+      <div class="metric"><span class="n red">1</span><span class="l">urgent</span></div>
+      <div class="sep"></div>
+      <div class="metric"><span class="n">3</span><span class="l">days since last reconcile</span></div>
+      <div class="ts">2026-05-28 13:51:22 CDT</div>
+    </div>
+
+    <div class="content">
+
+      <section class="sec">
+        <div class="sec-head">
+          <span class="sec-name">Captured / Local Queue</span>
+          <span class="sec-count">3</span>
+        </div>
+
+        <div class="capture-row">
+          <span class="glyph">+</span>
+          <input type="text" placeholder="capture — type and pin…" />
+          <span class="pin">PIN</span>
+        </div>
+
+        <div class="row your-row">
+          <span class="marker your"></span>
+          <span class="title">Ask Advisor whether Pulse pulls from Master Calendar directly or via Brain mirror</span>
+          <span class="tag dom">stb·brewery</span>
+          <span class="tag">→ ADVISOR</span>
+          <span class="age">2h</span>
+        </div>
+        <div class="row your-row">
+          <span class="marker your"></span>
+          <span class="title">THC distro — bundle 5mg singles into food-service deck for Q3</span>
+          <span class="tag dom">stb·thc</span>
+          <span class="tag">UNROUTED</span>
+          <span class="age">1d</span>
+        </div>
+        <div class="row your-row">
+          <span class="marker your"></span>
+          <span class="title">Personal rock: Marin mid-year review notes before next L10</span>
+          <span class="tag per">personal</span>
+          <span class="tag">→ PERSONAL BRAIN</span>
+          <span class="age">3d</span>
+        </div>
+      </section>
+
+      <section class="sec">
+        <div class="sec-head">
+          <span class="sec-name">Source Narratives</span>
+          <span class="sec-count">3</span>
+        </div>
+        <div class="row">
+          <span class="marker warn"></span>
+          <span class="title">Carlos Cortez — Silver Eagle hire, 2019-11-11</span>
+          <span class="tag dom">stb·brewery</span>
+          <span class="tag">→ LIVING ARCHIVE</span>
+          <span class="age bad">8d</span>
+        </div>
+        <div class="row">
+          <span class="marker warn"></span>
+          <span class="title">Lone Star Beverage Brands — 3-market wholesale relationship</span>
+          <span class="tag dom">stb·brewery</span>
+          <span class="tag">→ LIVING ARCHIVE</span>
+          <span class="age bad">8d</span>
+        </div>
+        <div class="row">
+          <span class="marker warn"></span>
+          <span class="title">Solstice / Johnnyo / Gorrity contractor enrichment</span>
+          <span class="tag dom">stb·brewery</span>
+          <span class="tag">→ LIVING ARCHIVE</span>
+          <span class="age warn">5d</span>
+        </div>
+      </section>
+
+      <section class="sec">
+        <div class="sec-head">
+          <span class="sec-name">Decisions Pending</span>
+          <span class="sec-count urgent">3</span>
+        </div>
+        <div class="row">
+          <span class="marker urgent"></span>
+          <span class="title">ADR-004 Release Agent — strategic veto gate</span>
+          <span class="tag dom">stb·system</span>
+          <span class="tag">ARCHITECT</span>
+          <span class="age">1h</span>
+        </div>
+        <div class="row">
+          <span class="marker warn"></span>
+          <span class="title">Party Pay Brain schema build — Workflow A approval</span>
+          <span class="tag dom">stb·brewery</span>
+          <span class="tag">ARCHITECT</span>
+          <span class="age warn">8d</span>
+        </div>
+        <div class="row">
+          <span class="marker warn"></span>
+          <span class="title">TSP2 — step 1 or step 2?</span>
+          <span class="tag dom">stb·brewery</span>
+          <span class="tag">CODE</span>
+          <span class="age bad">15d</span>
+        </div>
+      </section>
+
+      <section class="sec">
+        <div class="sec-head">
+          <span class="sec-name">External Holds</span>
+          <span class="sec-count">2</span>
+        </div>
+        <div class="row">
+          <span class="marker"></span>
+          <span class="title">Triple Seat API key — your request in</span>
+          <span class="tag">EXTERNAL</span>
+          <span class="tag">PROVIDER</span>
+          <span class="age">6d</span>
+        </div>
+        <div class="row">
+          <span class="marker"></span>
+          <span class="title">Mailchimp + Clover access — your requests in</span>
+          <span class="tag">EXTERNAL</span>
+          <span class="tag">PROVIDER</span>
+          <span class="age">6d</span>
+        </div>
+      </section>
+
+    </div>
+
+    <div class="footer-bar">
+      <span class="key">⌘K</span>
+      <input class="input" placeholder="quick capture — pins to queue, route to agent when ready…" />
+      <span>↵ to pin</span>
+    </div>
+
+  </main>
+</div>
+</body>
+</html>

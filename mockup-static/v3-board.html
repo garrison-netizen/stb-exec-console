@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>STB Executive Console — v3 Visual Board</title>
+  <style>
+    :root {
+      --bg: #14161e;
+      --surface: #1d2030;
+      --surface-2: #262a3d;
+      --line: #2f334a;
+      --line-soft: #262a3c;
+      --text: #e8ebf3;
+      --text-dim: #98a1b9;
+      --text-faint: #5a6178;
+      --text-bright: #ffffff;
+      --accent: #6b8eff;
+      --gold: #ffb547;
+      --green: #5ddca5;
+      --red: #ff6b6b;
+      --purple: #b585ff;
+      --pink: #ff7eb6;
+      --teal: #5ed6d6;
+
+      --brewery: #f59e0b;
+      --coffee: #a16207;
+      --texzas: #dc2626;
+      --thc: #16a34a;
+      --family: #ec4899;
+      --health: #14b8a6;
+      --hobbies: #6366f1;
+      --spiritual: #a855f7;
+      --language: #f97316;
+      --side: #84cc16;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      font-size: 14px;
+      line-height: 1.5;
+      padding: 28px 24px 100px;
+    }
+    .shell { max-width: 1280px; margin: 0 auto; }
+
+    /* ─── HEADER ─── */
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 24px;
+    }
+    .brand .word {
+      font-size: 10.5px;
+      letter-spacing: 0.14em;
+      color: var(--text-faint);
+      font-weight: 700;
+    }
+    .brand .name {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--text-bright);
+      letter-spacing: -0.01em;
+    }
+    .top-actions {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+    .pill {
+      background: rgba(93,220,165,0.1);
+      color: var(--green);
+      border: 1px solid rgba(93,220,165,0.3);
+      padding: 5px 11px;
+      border-radius: 14px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    /* ─── DOMAIN STRIP ─── */
+    .domain-strip {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 22px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--line-soft);
+    }
+    .dchip {
+      padding: 6px 14px;
+      border-radius: 18px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1px solid var(--line);
+      background: var(--surface);
+      color: var(--text-dim);
+      font-family: inherit;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .dchip:hover { color: var(--text); }
+    .dchip.on {
+      background: var(--surface-2);
+      color: var(--text-bright);
+      border-color: var(--text-faint);
+    }
+    .dchip .swatch {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+    }
+
+    /* ─── ROCKS — ANCHOR CARDS ─── */
+    .rocks-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+      gap: 10px;
+      margin-bottom: 28px;
+    }
+    .rock {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 14px;
+      position: relative;
+      overflow: hidden;
+    }
+    .rock::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+    }
+    .rock.brewery::before { background: var(--brewery); }
+    .rock.coffee::before { background: var(--coffee); }
+    .rock.thc::before { background: var(--thc); }
+    .rock.bjj::before { background: var(--hobbies); }
+    .rock.family::before { background: var(--family); }
+    .rock.spanish::before { background: var(--language); }
+    .rock .emoji {
+      font-size: 22px;
+      margin-bottom: 6px;
+    }
+    .rock .dom {
+      font-size: 9px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      font-weight: 800;
+      margin-bottom: 4px;
+    }
+    .rock.brewery .dom { color: var(--brewery); }
+    .rock.coffee .dom { color: var(--coffee); }
+    .rock.thc .dom { color: var(--thc); }
+    .rock.bjj .dom { color: var(--hobbies); }
+    .rock.family .dom { color: var(--family); }
+    .rock.spanish .dom { color: var(--language); }
+    .rock .text {
+      font-size: 12.5px;
+      line-height: 1.4;
+      color: var(--text);
+    }
+
+    /* ─── HERO STRIP ─── */
+    .hero {
+      background: linear-gradient(135deg, #1e2244 0%, #181b2c 100%);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 18px 22px;
+      margin-bottom: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 22px;
+    }
+    .hero h1 {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--text-bright);
+    }
+    .hero h1 .n { color: var(--gold); }
+    .hero .sub {
+      font-size: 12px;
+      color: var(--text-dim);
+      margin-top: 4px;
+    }
+    .reconcile {
+      background: linear-gradient(135deg, var(--accent), var(--purple));
+      color: white;
+      border: none;
+      padding: 11px 18px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: inherit;
+      box-shadow: 0 4px 16px rgba(107,142,255,0.25);
+    }
+
+    /* ─── BOARD GRID ─── */
+    .board {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 12px;
+    }
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      overflow: hidden;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      transition: transform 0.08s, border-color 0.15s;
+    }
+    .card:hover {
+      transform: translateY(-2px);
+      border-color: var(--text-faint);
+    }
+    .card .stripe {
+      height: 4px;
+    }
+    .card.kind-captured .stripe { background: var(--purple); }
+    .card.kind-narrative .stripe { background: var(--gold); }
+    .card.kind-decision .stripe { background: var(--accent); }
+    .card.kind-decision.urgent .stripe { background: var(--red); }
+    .card.kind-external .stripe { background: var(--text-faint); }
+    .card .body { padding: 14px 16px 12px; flex: 1; }
+    .card .kind {
+      font-size: 9.5px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      font-weight: 700;
+      color: var(--text-faint);
+      margin-bottom: 4px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .card.kind-captured .kind { color: var(--purple); }
+    .card.kind-narrative .kind { color: var(--gold); }
+    .card.kind-decision .kind { color: var(--accent); }
+    .card.kind-decision.urgent .kind { color: var(--red); }
+    .card .title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-bright);
+      line-height: 1.35;
+      margin-bottom: 8px;
+    }
+    .card .meta {
+      font-size: 11px;
+      color: var(--text-dim);
+      line-height: 1.5;
+    }
+    .card .meta .sep { opacity: 0.4; margin: 0 4px; }
+    .card .meta .age.bad { color: var(--red); font-weight: 600; }
+    .card .meta .age.warn { color: var(--gold); font-weight: 600; }
+    .card .footer {
+      padding: 10px 16px;
+      border-top: 1px solid var(--line-soft);
+      display: flex;
+      gap: 6px;
+      align-items: center;
+      background: rgba(0,0,0,0.15);
+    }
+    .card .footer .domain-dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      margin-right: 4px;
+    }
+    .card .domain-label {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--text-faint);
+    }
+    .card .btn {
+      margin-left: auto;
+      background: var(--surface-2);
+      border: 1px solid var(--line);
+      color: var(--text);
+      padding: 4px 10px;
+      border-radius: 5px;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+    }
+    .card .btn.primary {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: white;
+    }
+    .card .btn.danger { color: var(--red); }
+
+    .card.add-thought {
+      background: transparent;
+      border: 1px dashed var(--line);
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      cursor: pointer;
+      min-height: 140px;
+    }
+    .card.add-thought .glyph {
+      font-size: 28px;
+      color: var(--purple);
+      margin-bottom: 6px;
+    }
+    .card.add-thought .label {
+      font-size: 12px;
+      color: var(--text-dim);
+      font-style: italic;
+    }
+
+    .section-tab {
+      grid-column: 1 / -1;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin: 22px 0 4px;
+      padding: 0 4px;
+    }
+    .section-tab .name {
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--text-bright);
+    }
+    .section-tab .cnt {
+      font-size: 10.5px;
+      color: var(--text-faint);
+      background: var(--surface);
+      border: 1px solid var(--line);
+      padding: 1px 8px;
+      border-radius: 8px;
+    }
+    .section-tab .div {
+      flex: 1;
+      height: 1px;
+      background: var(--line-soft);
+    }
+
+    /* ─── FAB ─── */
+    .fab {
+      position: fixed;
+      right: 28px;
+      bottom: 28px;
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--purple), var(--accent));
+      color: white;
+      border: none;
+      font-size: 26px;
+      font-weight: 300;
+      cursor: pointer;
+      box-shadow: 0 10px 30px rgba(107,142,255,0.4);
+      z-index: 10;
+    }
+    .fab:hover { transform: scale(1.05); }
+    .fab .tooltip {
+      position: absolute;
+      right: 68px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: var(--surface);
+      border: 1px solid var(--line);
+      color: var(--text);
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 11.5px;
+      white-space: nowrap;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.15s;
+    }
+    .fab:hover .tooltip { opacity: 1; }
+  </style>
+</head>
+<body>
+<div class="shell">
+
+  <header class="header">
+    <div class="brand">
+      <div class="word">SPINDLETAP</div>
+      <div class="name">Executive Console</div>
+    </div>
+    <div class="top-actions">
+      <span class="pill">● Brain v4.6 live</span>
+    </div>
+  </header>
+
+  <!-- DOMAIN STRIP -->
+  <div class="domain-strip">
+    <button class="dchip on">All domains</button>
+    <button class="dchip"><span class="swatch" style="background:var(--brewery)"></span>Brewery</button>
+    <button class="dchip"><span class="swatch" style="background:var(--coffee)"></span>Coffee</button>
+    <button class="dchip"><span class="swatch" style="background:var(--texzas)"></span>Texzas</button>
+    <button class="dchip"><span class="swatch" style="background:var(--thc)"></span>THC</button>
+    <button class="dchip"><span class="swatch" style="background:var(--family)"></span>Family</button>
+    <button class="dchip"><span class="swatch" style="background:var(--health)"></span>Health</button>
+    <button class="dchip"><span class="swatch" style="background:var(--hobbies)"></span>Hobbies</button>
+    <button class="dchip"><span class="swatch" style="background:var(--spiritual)"></span>Spiritual</button>
+    <button class="dchip"><span class="swatch" style="background:var(--language)"></span>Spanish</button>
+    <button class="dchip"><span class="swatch" style="background:var(--side)"></span>Side hustles</button>
+  </div>
+
+  <!-- ROCKS -->
+  <div class="rocks-row">
+    <div class="rock brewery">
+      <div class="emoji">🍺</div>
+      <div class="dom">Brewery</div>
+      <div class="text">Hit Q2 distribution target (Houston + Austin)</div>
+    </div>
+    <div class="rock coffee">
+      <div class="emoji">🍵</div>
+      <div class="dom">Coffee</div>
+      <div class="text">Summer menu + seasonal drop</div>
+    </div>
+    <div class="rock thc">
+      <div class="emoji">🌿</div>
+      <div class="dom">THC</div>
+      <div class="text">5mg singles food-service launch</div>
+    </div>
+    <div class="rock bjj">
+      <div class="emoji">🥋</div>
+      <div class="dom">BJJ</div>
+      <div class="text">Purple belt grading</div>
+    </div>
+    <div class="rock family">
+      <div class="emoji">👨‍👩‍👧</div>
+      <div class="dom">Family</div>
+      <div class="text">Aug Big Bend trip planned + booked</div>
+    </div>
+    <div class="rock spanish">
+      <div class="emoji">🗣️</div>
+      <div class="dom">Spanish</div>
+      <div class="text">Daily 20-min, B1 by Sept</div>
+    </div>
+  </div>
+
+  <!-- HERO -->
+  <div class="hero">
+    <div>
+      <h1>The Brain needs you for <span class="n">9 items</span></h1>
+      <div class="sub">3 in queue · 1 channel relay · 2 stale agents · last reconciled 3d ago</div>
+    </div>
+    <button class="reconcile">⚡ Reconcile</button>
+  </div>
+
+  <!-- CAPTURED THOUGHTS -->
+  <div class="board">
+    <div class="section-tab">
+      <span class="name">💭 Your Captured Thoughts</span>
+      <span class="cnt">3</span>
+      <span class="div"></span>
+    </div>
+
+    <div class="card add-thought">
+      <div class="glyph">+</div>
+      <div class="label">Pin a thought for later</div>
+    </div>
+
+    <div class="card kind-captured">
+      <div class="stripe"></div>
+      <div class="body">
+        <div class="kind">💭 Captured · 2h ago</div>
+        <div class="title">Ask Advisor whether Pulse should pull from Master Calendar entries directly or via Brain mirror</div>
+        <div class="meta">tagged for: <strong>Advisor</strong></div>
+      </div>
+      <div class="footer">
+        <span class="domain-dot" style="background:var(--brewery)"></span>
+        <span class="domain-label">stb · brewery</span>
+        <button class="btn">Route</button>
+        <button class="btn danger">×</button>
+      </div>
+    </div>
+
+    <div class="card kind-captured">
+      <div class="stripe"></div>
+      <div class="body">
+        <div class="kind">💭 Captured · 1d ago</div>
+        <div class="title">THC distro — bundle 5mg singles into food-service deck for Q3</div>
+        <div class="meta"><em>unrouted — sitting until you decide</em></div>
+      </div>
+      <div class="footer">
+        <span class="domain-dot" style="background:var(--thc)"></span>
+        <span class="domain-label">stb · thc</span>
+        <button class="btn primary">Route</button>
+        <button class="btn danger">×</button>
+      </div>
+    </div>
+
+    <div class="card kind-captured">
+      <div class="stripe"></div>
+      <div class="body">
+        <div class="kind">💭 Captured · 3d ago</div>
+        <div class="title">Personal rock: write Marin's mid-year review notes before next L10</div>
+        <div class="meta">tagged for: <strong>Personal Brain</strong></div>
+      </div>
+      <div class="footer">
+        <span class="domain-dot" style="background:var(--family)"></span>
+        <span class="domain-label">personal · family</span>
+        <button class="btn">Route</button>
+        <button class="btn danger">×</button>
+      </div>
+    </div>
+
+    <!-- SOURCE NARRATIVES -->
+    <div class="section-tab">
+      <span class="name">📖 Source Narratives Needed</span>
+      <span class="cnt">3</span>
+      <span class="div"></span>
+    </div>
+
+    <div class="card kind-narrative">
+      <div class="stripe"></div>
+      <div class="body">
+        <div class="kind">📖 Architect · Living Archive</div>
+        <div class="title">Carlos Cortez hire from Silver Eagle (2019-11-11)</div>
+        <div class="meta">first-person account needed<span class="sep">·</span><span class="age bad">held 8 days</span></div>
+      </div>
+      <div class="footer">
+        <span class="domain-dot" style="background:var(--brewery)"></span>
+        <span class="domain-label">stb · brewery</span>
+        <button class="btn primary">Tell story</button>
+      </div>
+    </div>
+
+    <div class="card kind-narrative">
+      <div class="stripe"></div>
+      <div class="body">
+        <div class="kind">📖 Architect · Living Archive</div>
+        <div class="title">Lone Star Beverage Brands 3-market wholesale relationship</div>
+        <div class="meta">first-person account needed<span class="sep">·</span><span class="age bad">held 8 days</span></div>
+      </div>
+      <div class="footer">
+        <span class="domain-dot" style="background:var(--brewery)"></span>
+        <span class="domain-label">stb · brewery</span>
+        <button class="btn primary">Tell story</button>
+      </div>
+    </div>
+
+    <div class="card kind-narrative">
+      <div class="stripe"></div>
+      <div class="body">
+        <div class="kind">📖 Architect · Living Archive</div>
+        <div class="title">Solstice / Johnnyo / Gorrity contractor enrichment</div>
+        <div class="meta">3 contractor files<span class="sep">·</span><span class="age warn">held 5 days</span></div>
+      </div>
+      <div class="footer">
+        <span class="domain-dot" style="background:var(--brewery)"></span>
+        <span class="domain-label">stb · brewery</span>
+        <button class="btn primary">Tell story</button>
+      </div>
+    </div>
+
+    <!-- DECISIONS -->
+    <div class="section-tab">
+      <span class="name">⚖️ Decisions Pending Your Call</span>
+      <span class="cnt">3</span>
+      <span class="div"></span>
+    </div>
+
+    <div class="card kind-decision urgent">
+      <div class="stripe"></div>
+      <div class="body">
+        <div class="kind">⚖️ Architect · 1h ago · URGENT</div>
+        <div class="title">ADR-004 Release Agent — strategic veto gate</div>
+        <div class="meta">blocks Console v1 build</div>
+      </div>
+      <div class="footer">
+        <span class="domain-dot" style="background:var(--brewery)"></span>
+        <span class="domain-label">stb · system</span>
+        <button class="btn primary">Approve</button>
+        <button class="btn">Modify</button>
+        <button class="btn danger">Reject</button>
+      </div>
+    </div>
+
+    <div class="card kind-decision">
+      <div class="stripe"></div>
+      <div class="body">
+        <div class="kind">⚖️ Architect · waiting since May 20</div>
+        <div class="title">Party Pay Brain schema build — Workflow A approval</div>
+        <div class="meta">Event Payments + Paysafe + Bookings field</div>
+      </div>
+      <div class="footer">
+        <span class="domain-dot" style="background:var(--brewery)"></span>
+        <span class="domain-label">stb · brewery</span>
+        <button class="btn primary">Approve</button>
+        <button class="btn">Modify</button>
+      </div>
+    </div>
+
+    <div class="card kind-decision">
+      <div class="stripe"></div>
+      <div class="body">
+        <div class="kind">⚖️ Code · <span class="age bad">waiting 15 days</span></div>
+        <div class="title">TSP2 — step 1 (sandbox) or step 2 (direct)?</div>
+        <div class="meta">Triple Seat Phase 2 paused at this gate</div>
+      </div>
+      <div class="footer">
+        <span class="domain-dot" style="background:var(--brewery)"></span>
+        <span class="domain-label">stb · brewery</span>
+        <button class="btn primary">Step 1</button>
+        <button class="btn primary">Step 2</button>
+      </div>
+    </div>
+
+    <!-- EXTERNAL -->
+    <div class="section-tab">
+      <span class="name">ℹ️ External Holds</span>
+      <span class="cnt">2</span>
+      <span class="div"></span>
+    </div>
+
+    <div class="card kind-external">
+      <div class="stripe"></div>
+      <div class="body">
+        <div class="kind">ℹ️ External · 6d</div>
+        <div class="title">Triple Seat API key — your request in</div>
+        <div class="meta">awaiting provider grant</div>
+      </div>
+      <div class="footer">
+        <span class="domain-label">stb · brewery</span>
+      </div>
+    </div>
+
+    <div class="card kind-external">
+      <div class="stripe"></div>
+      <div class="body">
+        <div class="kind">ℹ️ External · 6d</div>
+        <div class="title">Mailchimp + Clover access — your requests in</div>
+        <div class="meta">awaiting provider grant</div>
+      </div>
+      <div class="footer">
+        <span class="domain-label">stb · brewery</span>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+<button class="fab">
+  +
+  <span class="tooltip">Quick capture</span>
+</button>
+
+</body>
+</html>

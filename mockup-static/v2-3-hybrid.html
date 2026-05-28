@@ -1,0 +1,1023 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>STB Executive Console — v2.3 Hybrid</title>
+  <style>
+    :root {
+      --bg: #0a0c12;
+      --panel: #11141d;
+      --panel-2: #181c28;
+      --panel-3: #1f2330;
+      --line: #232839;
+      --line-bright: #2e3346;
+      --text: #d8dde9;
+      --text-dim: #7a8294;
+      --text-faint: #4d5466;
+      --text-bright: #ffffff;
+      --accent: #5f8dff;
+      --accent-soft: #1a2547;
+      --gold: #f7b32b;
+      --green: #3ed598;
+      --red: #ff5a5f;
+      --purple: #b07cf9;
+      --purple-soft: #2d1b4a;
+      --mono: 'JetBrains Mono', 'SF Mono', 'Consolas', monospace;
+
+      /* Per-domain colors — used as item left-edge stripes + dots */
+      --d-brewery: #f59e0b;
+      --d-coffee: #a16207;
+      --d-texzas: #dc2626;
+      --d-thc: #16a34a;
+      --d-family: #ec4899;
+      --d-health: #14b8a6;
+      --d-hobbies: #6366f1;
+      --d-spiritual: #a855f7;
+      --d-language: #f97316;
+      --d-side: #84cc16;
+      --d-system: #6b8eff;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      font-size: 14px;
+      line-height: 1.5;
+      min-height: 100vh;
+      padding-bottom: 80px;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: 300px 1fr;
+      max-width: 1280px;
+      margin: 0 auto;
+      min-height: 100vh;
+    }
+
+    /* ─── SIDEBAR ─── */
+    .side {
+      background: var(--panel);
+      border-right: 1px solid var(--line);
+      padding: 20px 16px 80px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow-y: auto;
+    }
+    .brand {
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--line);
+    }
+    .brand .word {
+      font-size: 10px;
+      letter-spacing: 0.18em;
+      color: var(--text-faint);
+      font-weight: 700;
+    }
+    .brand .name {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--text-bright);
+      margin-top: 3px;
+    }
+    .brain-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 8px;
+      background: rgba(62,213,152,0.1);
+      border: 1px solid rgba(62,213,152,0.3);
+      color: var(--green);
+      font-size: 10px;
+      font-weight: 600;
+      padding: 3px 9px;
+      border-radius: 12px;
+      font-family: var(--mono);
+      letter-spacing: 0.04em;
+    }
+    .brain-pill .dot {
+      width: 5px; height: 5px;
+      background: var(--green);
+      border-radius: 50%;
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.35} }
+
+    .panel-head {
+      font-size: 9.5px;
+      font-weight: 800;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--text-faint);
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .panel-head .icon { font-size: 12px; }
+
+    /* Rocks — small visual chips */
+    .rocks-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .rocks-list li {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 10px;
+      background: var(--panel-2);
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      font-size: 11.5px;
+      position: relative;
+      overflow: hidden;
+    }
+    .rocks-list li::before {
+      content: '';
+      position: absolute;
+      left: 0; top: 0; bottom: 0;
+      width: 2px;
+      background: var(--gold);
+    }
+    .rocks-list .emoji { font-size: 14px; flex-shrink: 0; }
+    .rocks-list .meta {
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
+    .rocks-list .dom {
+      font-family: var(--mono);
+      font-size: 8.5px;
+      letter-spacing: 0.06em;
+      color: var(--text-faint);
+      text-transform: uppercase;
+    }
+    .rocks-list .text {
+      font-size: 11px;
+      color: var(--text);
+      line-height: 1.3;
+    }
+
+    /* Domain filter — chips */
+    .filter-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+    }
+    .fchip {
+      background: var(--panel-2);
+      border: 1px solid var(--line);
+      padding: 3px 9px;
+      border-radius: 12px;
+      font-size: 10.5px;
+      color: var(--text-dim);
+      cursor: pointer;
+      font-family: inherit;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .fchip:hover { color: var(--text); border-color: var(--accent); }
+    .fchip.on {
+      background: var(--accent-soft);
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+    .fchip .sw {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+    }
+
+    /* System status — small stat grid */
+    .stat-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+    }
+    .stat {
+      background: var(--panel-2);
+      border: 1px solid var(--line);
+      padding: 9px 10px;
+      border-radius: 6px;
+    }
+    .stat .v {
+      font-family: var(--mono);
+      font-size: 17px;
+      font-weight: 700;
+      color: var(--text-bright);
+      font-feature-settings: 'tnum';
+    }
+    .stat .v.gold { color: var(--gold); }
+    .stat .v.bad { color: var(--red); }
+    .stat .v.ok { color: var(--green); }
+    .stat .v.purple { color: var(--purple); }
+    .stat .l {
+      font-size: 9px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-faint);
+      margin-top: 2px;
+    }
+
+    /* Agent freshness */
+    .agents-list {
+      font-size: 11px;
+      list-style: none;
+    }
+    .agents-list li {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 6px 0;
+      border-bottom: 1px solid var(--line);
+    }
+    .agents-list li:last-child { border-bottom: none; }
+    .agents-list .ag {
+      color: var(--text);
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .agents-list .ag::before {
+      content: '';
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: var(--text-faint);
+    }
+    .agents-list li.ok .ag::before { background: var(--green); }
+    .agents-list li.stale .ag::before { background: var(--gold); }
+    .agents-list li.bad .ag::before { background: var(--red); }
+    .agents-list .ts {
+      font-family: var(--mono);
+      font-size: 10px;
+      color: var(--text-faint);
+    }
+    .agents-list li.stale .ts { color: var(--gold); }
+    .agents-list li.bad .ts { color: var(--red); }
+    .agents-list li.ok .ts { color: var(--green); }
+
+    /* Reconcile button — sticky in sidebar */
+    .reconcile {
+      margin-top: auto;
+      background: linear-gradient(135deg, var(--accent), var(--purple));
+      border: none;
+      color: white;
+      font-family: inherit;
+      font-weight: 700;
+      padding: 14px 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 13.5px;
+      letter-spacing: 0.02em;
+      text-align: left;
+      box-shadow: 0 6px 20px rgba(95,141,255,0.25);
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .reconcile .top { display: flex; align-items: center; gap: 8px; }
+    .reconcile .bolt { font-size: 15px; }
+    .reconcile .sub {
+      font-size: 9.5px;
+      font-weight: 600;
+      opacity: 0.9;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      font-family: var(--mono);
+    }
+
+    /* ─── MAIN ─── */
+    .main {
+      padding: 24px 28px 30px;
+      max-width: 880px;
+      width: 100%;
+    }
+
+    /* Slim hero — no Reconcile button (it's in sidebar) */
+    .hero {
+      padding: 18px 22px;
+      background: linear-gradient(135deg, rgba(26,37,71,0.55) 0%, rgba(21,24,42,0.55) 100%);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      margin-bottom: 24px;
+    }
+    .hero h1 {
+      font-size: 21px;
+      font-weight: 700;
+      color: var(--text-bright);
+      letter-spacing: -0.01em;
+    }
+    .hero h1 .n {
+      color: var(--gold);
+      margin: 0 6px;
+      font-feature-settings: 'tnum';
+    }
+    .hero .sub {
+      font-size: 12.5px;
+      color: var(--text-dim);
+      margin-top: 5px;
+      font-family: var(--mono);
+    }
+
+    /* Sections */
+    .sec { margin-bottom: 36px; }
+    .sec-head {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 14px;
+      padding: 13px 18px;
+      background: var(--panel-3);
+      border: 1px solid var(--line-bright);
+      border-radius: 10px;
+      box-shadow: 0 1px 0 0 rgba(255,255,255,0.02) inset, 0 2px 8px rgba(0,0,0,0.2);
+    }
+    .sec-name {
+      font-size: 17px;
+      font-weight: 800;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+      color: var(--text-bright);
+    }
+    .sec-icon { font-size: 22px; }
+    .sec-count {
+      font-family: var(--mono);
+      font-size: 12.5px;
+      font-weight: 700;
+      color: var(--text-dim);
+      background: var(--panel);
+      border: 1px solid var(--line);
+      padding: 2px 10px;
+      border-radius: 10px;
+    }
+    .sec-divider { display: none; }
+    .sec-count.yours { color: var(--purple); background: var(--purple-soft); border-color: rgba(176,124,249,0.3); }
+    .sec-count.urgent { color: var(--red); background: rgba(255,90,95,0.1); border-color: rgba(255,90,95,0.3); }
+    .mocked-tag {
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      color: var(--text-faint);
+      background: var(--panel-2);
+      border: 1px dashed var(--line);
+      padding: 1px 6px;
+      border-radius: 3px;
+      text-transform: uppercase;
+    }
+    .sec-divider {
+      flex: 1;
+      height: 1px;
+      background: var(--line);
+    }
+
+    /* Items */
+    .items {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .item {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-left: 3px solid var(--text-faint);
+      border-radius: 8px;
+      padding: 14px 18px;
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s;
+    }
+    .item:hover {
+      background: var(--panel-2);
+      border-color: var(--line-bright);
+    }
+    /* Per-domain stripe colors */
+    .item.dom-brewery { border-left-color: var(--d-brewery); }
+    .item.dom-coffee { border-left-color: var(--d-coffee); }
+    .item.dom-texzas { border-left-color: var(--d-texzas); }
+    .item.dom-thc { border-left-color: var(--d-thc); }
+    .item.dom-family { border-left-color: var(--d-family); }
+    .item.dom-health { border-left-color: var(--d-health); }
+    .item.dom-hobbies { border-left-color: var(--d-hobbies); }
+    .item.dom-spiritual { border-left-color: var(--d-spiritual); }
+    .item.dom-language { border-left-color: var(--d-language); }
+    .item.dom-side { border-left-color: var(--d-side); }
+    .item.dom-system { border-left-color: var(--d-system); }
+    .item.urgent { border-left-color: var(--red) !important; border-left-width: 4px; }
+    .item.your { background: linear-gradient(90deg, rgba(176,124,249,0.05) 0%, var(--panel) 30%); }
+
+    .item-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-bright);
+      line-height: 1.4;
+      margin-bottom: 5px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .item-title:hover { color: var(--accent); }
+    .item-title::after {
+      content: '⊞';
+      font-size: 12px;
+      color: var(--text-faint);
+      opacity: 0;
+      transition: opacity 0.15s;
+    }
+    .item:hover .item-title::after { opacity: 0.6; }
+    .item-meta {
+      font-size: 11.5px;
+      color: var(--text-dim);
+      display: flex;
+      gap: 6px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .item-meta .sep { opacity: 0.5; }
+    .item-meta .age.warn { color: var(--gold); font-weight: 600; }
+    .item-meta .age.bad { color: var(--red); font-weight: 600; }
+    .domain-tag {
+      font-family: var(--mono);
+      font-size: 9.5px;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--text-faint);
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .domain-tag::before {
+      content: '';
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--text-faint);
+    }
+    .domain-tag.dom-brewery::before { background: var(--d-brewery); }
+    .domain-tag.dom-brewery { color: var(--d-brewery); }
+    .domain-tag.dom-thc::before { background: var(--d-thc); }
+    .domain-tag.dom-thc { color: var(--d-thc); }
+    .domain-tag.dom-family::before { background: var(--d-family); }
+    .domain-tag.dom-family { color: var(--d-family); }
+    .domain-tag.dom-system::before { background: var(--d-system); }
+    .domain-tag.dom-system { color: var(--d-system); }
+
+    .item-actions {
+      display: flex;
+      gap: 6px;
+      margin-top: 12px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    .btn {
+      padding: 6px 12px;
+      border-radius: 5px;
+      font-size: 11.5px;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1px solid transparent;
+      font-family: inherit;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .btn.primary { background: var(--accent); color: white; }
+    .btn.primary:hover { background: #4a78f0; }
+    .btn.secondary {
+      background: var(--panel-2);
+      color: var(--text);
+      border: 1px solid var(--line);
+    }
+    .btn.secondary:hover { border-color: var(--line-bright); }
+    .btn.ghost {
+      background: transparent;
+      color: var(--text-faint);
+    }
+    .btn.ghost:hover { color: var(--text); }
+    .btn.danger { background: transparent; color: var(--text-faint); }
+    .btn.danger:hover { color: var(--red); }
+    .btn-arrow { font-size: 9px; opacity: 0.7; }
+
+    /* Your queue — inline capture + route chips */
+    .capture-inline {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 10px;
+      padding: 11px 14px;
+      background: var(--panel);
+      border: 1px dashed var(--line);
+      border-radius: 7px;
+    }
+    .capture-inline input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      color: var(--text);
+      font-size: 13px;
+      font-family: inherit;
+      outline: none;
+    }
+    .capture-inline input::placeholder { color: var(--text-faint); font-style: italic; }
+    .capture-inline .pin {
+      background: var(--purple-soft);
+      color: var(--purple);
+      border: 1px solid var(--purple);
+      padding: 5px 13px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: inherit;
+    }
+    .route-chips {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      flex-wrap: wrap;
+      margin-right: 6px;
+    }
+    .route-label {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      color: var(--text-faint);
+      text-transform: uppercase;
+      margin-right: 2px;
+    }
+    .chip-route {
+      background: var(--panel-3);
+      color: var(--text-dim);
+      border: 1px solid var(--line);
+      padding: 3px 9px;
+      border-radius: 11px;
+      font-size: 10.5px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+    }
+    .chip-route:hover { color: var(--text); border-color: var(--purple); }
+    .chip-route.on {
+      background: var(--purple-soft);
+      color: var(--purple);
+      border-color: var(--purple);
+    }
+
+    /* External holds (collapsed by default look) */
+    .info {
+      margin-top: 28px;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 12px 16px;
+      opacity: 0.7;
+    }
+    .info:hover { opacity: 1; }
+    .info-head {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+    }
+    .info-title {
+      font-size: 11px;
+      color: var(--text-dim);
+      letter-spacing: 0.04em;
+    }
+    .info-chevron { margin-left: auto; color: var(--text-faint); }
+    .info-rows {
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid var(--line);
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .info-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11.5px;
+      color: var(--text-dim);
+    }
+    .info-row .when { color: var(--text-faint); font-family: var(--mono); font-size: 10.5px; }
+
+    /* Sticky capture bar */
+    .capture-bar {
+      position: fixed;
+      bottom: 0;
+      left: 300px;
+      right: 0;
+      background: var(--panel);
+      border-top: 1px solid var(--line);
+      padding: 12px 28px;
+      box-shadow: 0 -8px 24px rgba(0,0,0,0.3);
+      z-index: 10;
+    }
+    .capture-inner {
+      max-width: 880px;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+    .capture-icon { font-size: 18px; color: var(--accent); }
+    .capture-mic {
+      background: var(--panel-2);
+      border: 1px solid var(--line);
+      border-radius: 5px;
+      width: 36px; height: 36px;
+      font-size: 14px;
+      cursor: not-allowed;
+      font-family: inherit;
+      color: var(--text-faint);
+      position: relative;
+      opacity: 0.5;
+    }
+    .capture-mic::after {
+      content: 'v3';
+      position: absolute;
+      top: -5px; right: -5px;
+      font-size: 7.5px;
+      font-weight: 800;
+      background: rgba(247,179,43,0.15);
+      color: var(--gold);
+      border: 1px solid rgba(247,179,43,0.5);
+      padding: 0 3px;
+      border-radius: 4px;
+    }
+    .capture-input {
+      flex: 1;
+      background: var(--panel-2);
+      border: 1px solid var(--line);
+      border-radius: 5px;
+      padding: 10px 14px;
+      color: var(--text);
+      font-size: 13px;
+      font-family: inherit;
+      outline: none;
+    }
+    .capture-input:focus { border-color: var(--accent); }
+    .capture-send {
+      background: var(--accent);
+      color: white;
+      border: none;
+      padding: 10px 16px;
+      border-radius: 5px;
+      font-weight: 700;
+      font-size: 12px;
+      cursor: pointer;
+      font-family: inherit;
+    }
+
+    .footer-nav {
+      margin-top: 36px;
+      padding-top: 14px;
+      border-top: 1px solid var(--line);
+      display: flex;
+      justify-content: center;
+      gap: 22px;
+      font-size: 11.5px;
+      color: var(--text-faint);
+    }
+    .footer-nav a { color: var(--text-faint); text-decoration: none; }
+    .footer-nav a:hover { color: var(--text); }
+  </style>
+</head>
+<body>
+<div class="grid">
+
+  <!-- ─── SIDEBAR ─── -->
+  <aside class="side">
+    <div class="brand">
+      <div class="word">SPINDLETAP</div>
+      <div class="name">Executive Console</div>
+      <div class="brain-pill"><span class="dot"></span>BRAIN v4.6 LIVE</div>
+    </div>
+
+    <div>
+      <div class="panel-head"><span class="icon">🎯</span>Q2 Rocks</div>
+      <ul class="rocks-list">
+        <li><span class="emoji">🍺</span><span class="meta"><span class="dom">Brewery</span><span class="text">Q2 distro target — Houston + Austin</span></span></li>
+        <li><span class="emoji">🍵</span><span class="meta"><span class="dom">Coffee</span><span class="text">Summer menu + seasonal drop</span></span></li>
+        <li><span class="emoji">🌿</span><span class="meta"><span class="dom">THC</span><span class="text">5mg singles food-service launch</span></span></li>
+        <li><span class="emoji">🥋</span><span class="meta"><span class="dom">BJJ</span><span class="text">Purple belt grading</span></span></li>
+        <li><span class="emoji">👨‍👩‍👧</span><span class="meta"><span class="dom">Family</span><span class="text">Big Bend Aug planned + booked</span></span></li>
+        <li><span class="emoji">🗣️</span><span class="meta"><span class="dom">Spanish</span><span class="text">B1 by Sept; 20 min daily</span></span></li>
+      </ul>
+    </div>
+
+    <div>
+      <div class="panel-head">Focus</div>
+      <div class="filter-chips">
+        <button class="fchip on">All</button>
+        <button class="fchip"><span class="sw" style="background:var(--d-brewery)"></span>Brewery</button>
+        <button class="fchip"><span class="sw" style="background:var(--d-coffee)"></span>Coffee</button>
+        <button class="fchip"><span class="sw" style="background:var(--d-texzas)"></span>Texzas</button>
+        <button class="fchip"><span class="sw" style="background:var(--d-thc)"></span>THC</button>
+        <button class="fchip"><span class="sw" style="background:var(--d-family)"></span>Family</button>
+        <button class="fchip"><span class="sw" style="background:var(--d-health)"></span>Health</button>
+        <button class="fchip"><span class="sw" style="background:var(--d-hobbies)"></span>Hobbies</button>
+        <button class="fchip"><span class="sw" style="background:var(--d-spiritual)"></span>Spiritual</button>
+        <button class="fchip"><span class="sw" style="background:var(--d-language)"></span>Spanish</button>
+        <button class="fchip"><span class="sw" style="background:var(--d-side)"></span>Side</button>
+      </div>
+    </div>
+
+    <div>
+      <div class="panel-head">System Status</div>
+      <div class="stat-grid">
+        <div class="stat"><div class="v gold">9</div><div class="l">need you</div></div>
+        <div class="stat"><div class="v purple">3</div><div class="l">queue</div></div>
+        <div class="stat"><div class="v bad">2</div><div class="l">stale &gt;5d</div></div>
+        <div class="stat"><div class="v ok">3d</div><div class="l">last recon.</div></div>
+      </div>
+    </div>
+
+    <div>
+      <div class="panel-head">Agent Freshness</div>
+      <ul class="agents-list">
+        <li class="bad"><span class="ag">Architect</span><span class="ts">5d stale</span></li>
+        <li class="stale"><span class="ag">Advisor</span><span class="ts">3d stale</span></li>
+        <li class="ok"><span class="ag">Code</span><span class="ts">now</span></li>
+        <li class="bad"><span class="ag">Personal Brain</span><span class="ts">9d stale</span></li>
+      </ul>
+    </div>
+
+    <button class="reconcile">
+      <div class="top"><span class="bolt">⚡</span>Reconcile</div>
+      <span class="sub">PUSH · PULL · SURFACE</span>
+    </button>
+  </aside>
+
+  <!-- ─── MAIN ─── -->
+  <main class="main">
+
+    <div class="hero">
+      <h1>The Brain needs you for<span class="n">9</span>items</h1>
+      <div class="sub">3 captured · 3 source narratives · 3 decisions · 2 external holds · last reconciled 3d ago</div>
+    </div>
+
+    <!-- YOUR CAPTURED THOUGHTS -->
+    <section class="sec">
+      <div class="sec-head">
+        <span class="sec-icon">💭</span>
+        <span class="sec-name">Your Captured Thoughts</span>
+        <span class="sec-count yours">3</span>
+        <span class="mocked-tag">local</span>
+        <div class="sec-divider"></div>
+      </div>
+
+      <div class="capture-inline">
+        <input type="text" placeholder="Pin a thought for later — type and hit enter…" />
+        <button class="pin">+ Pin</button>
+      </div>
+
+      <div class="items">
+
+        <div class="item your dom-brewery">
+          <div class="item-title">Ask Advisor whether Pulse should pull from Master Calendar entries directly or via Brain mirror</div>
+          <div class="item-meta">
+            <span class="domain-tag dom-brewery">stb · brewery</span>
+            <span class="sep">·</span>
+            <span>captured 2h ago</span>
+            <span class="sep">·</span>
+            <span>tagged for: Advisor</span>
+          </div>
+          <div class="item-actions">
+            <div class="route-chips">
+              <span class="route-label">Route:</span>
+              <button class="chip-route">Architect</button>
+              <button class="chip-route on">Advisor</button>
+              <button class="chip-route">Code</button>
+              <button class="chip-route">Personal Brain</button>
+              <button class="chip-route">Obsidian</button>
+            </div>
+            <button class="btn danger">Dismiss</button>
+          </div>
+        </div>
+
+        <div class="item your dom-thc">
+          <div class="item-title">THC distro — bundle 5mg singles into food-service deck for Q3</div>
+          <div class="item-meta">
+            <span class="domain-tag dom-thc">stb · thc</span>
+            <span class="sep">·</span>
+            <span>captured yesterday</span>
+            <span class="sep">·</span>
+            <span><em>unrouted — sitting until you decide</em></span>
+          </div>
+          <div class="item-actions">
+            <div class="route-chips">
+              <span class="route-label">Route:</span>
+              <button class="chip-route">Architect</button>
+              <button class="chip-route">Advisor</button>
+              <button class="chip-route">Code</button>
+              <button class="chip-route">Personal Brain</button>
+              <button class="chip-route">Obsidian</button>
+            </div>
+            <button class="btn danger">Dismiss</button>
+          </div>
+        </div>
+
+        <div class="item your dom-family">
+          <div class="item-title">Personal rock: write Marin's mid-year review notes before next L10</div>
+          <div class="item-meta">
+            <span class="domain-tag dom-family">personal · family</span>
+            <span class="sep">·</span>
+            <span>captured 3 days ago</span>
+            <span class="sep">·</span>
+            <span>tagged for: Personal Brain</span>
+          </div>
+          <div class="item-actions">
+            <div class="route-chips">
+              <span class="route-label">Route:</span>
+              <button class="chip-route">Architect</button>
+              <button class="chip-route">Advisor</button>
+              <button class="chip-route">Code</button>
+              <button class="chip-route on">Personal Brain</button>
+              <button class="chip-route">Obsidian</button>
+            </div>
+            <button class="btn danger">Dismiss</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SOURCE NARRATIVES -->
+    <section class="sec">
+      <div class="sec-head">
+        <span class="sec-icon">📖</span>
+        <span class="sec-name">Source Narratives Needed</span>
+        <span class="sec-count">3</span>
+        <span class="mocked-tag">🧪 mock</span>
+        <div class="sec-divider"></div>
+      </div>
+      <div class="items">
+
+        <div class="item dom-brewery">
+          <div class="item-title">Carlos Cortez hire from Silver Eagle (2019-11-11)</div>
+          <div class="item-meta">
+            <span class="domain-tag dom-brewery">stb · brewery</span>
+            <span class="sep">·</span>
+            <span>Architect needs your first-person account</span>
+            <span class="sep">·</span>
+            <span>→ Living Archive</span>
+            <span class="sep">·</span>
+            <span class="age bad">held 8d</span>
+          </div>
+          <div class="item-actions">
+            <button class="btn primary">Tell the story</button>
+            <button class="btn secondary">Defer 7d</button>
+            <button class="btn ghost">Drop</button>
+            <button class="btn ghost">Open in Notion <span class="btn-arrow">↗</span></button>
+          </div>
+        </div>
+
+        <div class="item dom-brewery">
+          <div class="item-title">Lone Star Beverage Brands 3-market wholesale relationship</div>
+          <div class="item-meta">
+            <span class="domain-tag dom-brewery">stb · brewery</span>
+            <span class="sep">·</span>
+            <span>Architect needs your first-person account</span>
+            <span class="sep">·</span>
+            <span>→ Living Archive</span>
+            <span class="sep">·</span>
+            <span class="age bad">held 8d</span>
+          </div>
+          <div class="item-actions">
+            <button class="btn primary">Tell the story</button>
+            <button class="btn secondary">Defer 7d</button>
+            <button class="btn ghost">Drop</button>
+          </div>
+        </div>
+
+        <div class="item dom-brewery">
+          <div class="item-title">Solstice / Johnnyo / Gorrity contractor enrichment</div>
+          <div class="item-meta">
+            <span class="domain-tag dom-brewery">stb · brewery</span>
+            <span class="sep">·</span>
+            <span>Architect needs your first-person account</span>
+            <span class="sep">·</span>
+            <span>→ Living Archive</span>
+            <span class="sep">·</span>
+            <span class="age warn">held 5d</span>
+          </div>
+          <div class="item-actions">
+            <button class="btn primary">Tell the story</button>
+            <button class="btn secondary">Defer 7d</button>
+            <button class="btn ghost">Drop</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- DECISIONS -->
+    <section class="sec">
+      <div class="sec-head">
+        <span class="sec-icon">⚖️</span>
+        <span class="sec-name">Decisions Pending Your Call</span>
+        <span class="sec-count urgent">3</span>
+        <span class="mocked-tag">🧪 mock</span>
+        <div class="sec-divider"></div>
+      </div>
+      <div class="items">
+
+        <div class="item urgent dom-system">
+          <div class="item-title">ADR-004 Release Agent — strategic veto gate</div>
+          <div class="item-meta">
+            <span class="domain-tag dom-system">stb · system</span>
+            <span class="sep">·</span>
+            <span>Architect</span>
+            <span class="sep">·</span>
+            <span>posted 1h ago</span>
+            <span class="sep">·</span>
+            <span>blocks Console v1 build</span>
+          </div>
+          <div class="item-actions">
+            <button class="btn primary">Approve</button>
+            <button class="btn secondary">Modify</button>
+            <button class="btn ghost">Reject</button>
+            <button class="btn ghost">Open ADR <span class="btn-arrow">↗</span></button>
+          </div>
+        </div>
+
+        <div class="item dom-brewery">
+          <div class="item-title">Party Pay Brain schema build — Workflow A approval</div>
+          <div class="item-meta">
+            <span class="domain-tag dom-brewery">stb · brewery</span>
+            <span class="sep">·</span>
+            <span>Architect</span>
+            <span class="sep">·</span>
+            <span class="age warn">waiting since May 20</span>
+          </div>
+          <div class="item-actions">
+            <button class="btn primary">Approve</button>
+            <button class="btn secondary">Modify</button>
+            <button class="btn ghost">Reject</button>
+          </div>
+        </div>
+
+        <div class="item dom-brewery">
+          <div class="item-title">TSP2 — step 1 (sandbox) or step 2 (direct)?</div>
+          <div class="item-meta">
+            <span class="domain-tag dom-brewery">stb · brewery</span>
+            <span class="sep">·</span>
+            <span>Code</span>
+            <span class="sep">·</span>
+            <span class="age bad">waiting 15 days</span>
+          </div>
+          <div class="item-actions">
+            <button class="btn primary">Step 1</button>
+            <button class="btn primary">Step 2</button>
+            <button class="btn secondary">Defer 7d</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- EXTERNAL -->
+    <div class="info">
+      <div class="info-head">
+        <span class="sec-icon" style="font-size:12px;">ℹ️</span>
+        <span class="info-title">Was you, now external — 2 items waiting on providers</span>
+        <span class="mocked-tag">🧪 mock</span>
+        <span class="info-chevron">▼</span>
+      </div>
+      <div class="info-rows">
+        <div class="info-row">
+          <span>Triple Seat API key — your request in</span>
+          <span class="when">awaiting provider · 6d</span>
+        </div>
+        <div class="info-row">
+          <span>Mailchimp + Clover access — your requests in</span>
+          <span class="when">awaiting provider · 6d</span>
+        </div>
+      </div>
+    </div>
+
+    <nav class="footer-nav">
+      <a href="#">Browse Brain</a>
+      <a href="#">Recent activity</a>
+      <a href="#">Agent status</a>
+      <a href="#">Settings</a>
+    </nav>
+
+  </main>
+</div>
+
+<!-- STICKY CAPTURE BAR -->
+<div class="capture-bar">
+  <div class="capture-inner">
+    <span class="capture-icon">💭</span>
+    <button class="capture-mic" disabled title="Voice capture — v3 roadmap">🎤</button>
+    <input class="capture-input" type="text" placeholder="Quick capture — pins to your queue, route to an agent when ready…" />
+    <button class="capture-send">Pin to Queue</button>
+  </div>
+</div>
+
+</body>
+</html>

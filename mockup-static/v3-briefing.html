@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>STB Executive Console — v3 Briefing</title>
+  <style>
+    :root {
+      --bg: #fafaf5;
+      --paper: #ffffff;
+      --ink: #1a1a1a;
+      --ink-soft: #4a4a4a;
+      --ink-dim: #7a7a7a;
+      --rule: #e3e1d9;
+      --rule-soft: #ede9df;
+      --accent: #8b1a1a;
+      --gold: #a6741e;
+      --green: #2d5e3e;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Iowan Old Style', 'Palatino Linotype', Georgia, serif;
+      background: var(--bg);
+      color: var(--ink);
+      font-size: 15px;
+      line-height: 1.6;
+      padding: 40px 24px 100px;
+    }
+    .shell { max-width: 640px; margin: 0 auto; }
+    .masthead {
+      border-bottom: 2px solid var(--ink);
+      padding-bottom: 14px;
+      margin-bottom: 28px;
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+    }
+    .masthead h1 {
+      font-size: 24px;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+    }
+    .masthead .dateline {
+      font-size: 12px;
+      color: var(--ink-dim);
+      font-style: italic;
+    }
+    .lede {
+      font-family: Georgia, serif;
+      font-size: 19px;
+      line-height: 1.5;
+      color: var(--ink);
+      margin: 28px 0 12px;
+      letter-spacing: -0.005em;
+    }
+    .lede .count { font-weight: 700; }
+    .lede-sub {
+      font-size: 13px;
+      color: var(--ink-dim);
+      font-style: italic;
+      margin-bottom: 18px;
+    }
+    .reconcile {
+      display: inline;
+      color: var(--accent);
+      text-decoration: underline;
+      text-decoration-thickness: 1px;
+      text-underline-offset: 3px;
+      cursor: pointer;
+      font-style: italic;
+      font-size: 13px;
+    }
+    .quarter-anchors {
+      background: var(--paper);
+      border: 1px solid var(--rule);
+      padding: 16px 20px;
+      margin: 28px 0;
+    }
+    .quarter-anchors h2 {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--ink-soft);
+      margin-bottom: 10px;
+    }
+    .quarter-anchors ul {
+      list-style: none;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 4px 24px;
+    }
+    .quarter-anchors li {
+      font-size: 13.5px;
+      color: var(--ink-soft);
+      line-height: 1.5;
+      position: relative;
+      padding-left: 12px;
+    }
+    .quarter-anchors li::before {
+      content: '·';
+      position: absolute;
+      left: 2px;
+      color: var(--gold);
+      font-weight: 700;
+    }
+    .quarter-anchors li .label {
+      font-weight: 700;
+      color: var(--ink);
+      font-variant: small-caps;
+      letter-spacing: 0.04em;
+    }
+    .focus-bar {
+      font-size: 12px;
+      color: var(--ink-dim);
+      font-style: italic;
+      margin: 20px 0 8px;
+      padding-bottom: 6px;
+      border-bottom: 1px solid var(--rule-soft);
+    }
+    .focus-bar a {
+      color: var(--ink-soft);
+      text-decoration: none;
+      margin-right: 14px;
+      font-style: normal;
+      border-bottom: 1px solid transparent;
+    }
+    .focus-bar a.active {
+      color: var(--ink);
+      border-bottom-color: var(--ink);
+    }
+    .section {
+      margin: 32px 0 12px;
+    }
+    .section-head {
+      font-size: 11.5px;
+      font-weight: 700;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--ink-soft);
+      margin-bottom: 14px;
+      padding-bottom: 6px;
+      border-bottom: 1px solid var(--rule);
+    }
+    .entry {
+      margin-bottom: 24px;
+    }
+    .entry .title {
+      font-size: 17px;
+      font-weight: 700;
+      line-height: 1.35;
+      margin-bottom: 4px;
+      letter-spacing: -0.005em;
+    }
+    .entry .by {
+      font-size: 12px;
+      font-style: italic;
+      color: var(--ink-dim);
+      margin-bottom: 6px;
+    }
+    .entry .body {
+      font-size: 14.5px;
+      color: var(--ink-soft);
+      line-height: 1.65;
+    }
+    .entry .body p { margin-bottom: 8px; }
+    .entry .actions {
+      margin-top: 8px;
+      font-size: 12.5px;
+      color: var(--ink-dim);
+      font-style: italic;
+    }
+    .entry .actions a {
+      color: var(--accent);
+      text-decoration: none;
+      border-bottom: 1px dotted var(--accent);
+      margin-right: 12px;
+      cursor: pointer;
+    }
+    .entry .actions a.muted { color: var(--ink-dim); border-bottom-color: var(--ink-dim); }
+    .urgent::before {
+      content: '※';
+      color: var(--accent);
+      margin-right: 6px;
+    }
+    .capture {
+      background: var(--paper);
+      border-top: 1px solid var(--rule);
+      border-bottom: 1px solid var(--rule);
+      padding: 14px 0;
+      margin: 22px 0 8px;
+    }
+    .capture .prompt {
+      font-size: 12.5px;
+      font-style: italic;
+      color: var(--ink-dim);
+      margin-bottom: 6px;
+    }
+    .capture input {
+      width: 100%;
+      background: transparent;
+      border: none;
+      font-family: inherit;
+      font-size: 16px;
+      color: var(--ink);
+      outline: none;
+      padding: 4px 0;
+      font-style: italic;
+    }
+    .your-thought {
+      padding-left: 14px;
+      border-left: 2px solid var(--gold);
+      margin-bottom: 18px;
+    }
+    .your-thought .text {
+      font-size: 15px;
+      color: var(--ink);
+      margin-bottom: 4px;
+      line-height: 1.55;
+    }
+    .your-thought .meta {
+      font-size: 12px;
+      font-style: italic;
+      color: var(--ink-dim);
+    }
+    .external {
+      background: var(--paper);
+      border-top: 1px dashed var(--rule);
+      margin-top: 36px;
+      padding-top: 14px;
+      font-size: 12.5px;
+      color: var(--ink-dim);
+    }
+    .external h3 {
+      font-size: 10.5px;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--ink-soft);
+      margin-bottom: 8px;
+    }
+    .external ul { list-style: none; }
+    .external li { padding: 3px 0; }
+    .external li .when { color: var(--ink-dim); font-style: italic; margin-left: 8px; }
+    .colophon {
+      margin-top: 40px;
+      padding-top: 14px;
+      border-top: 1px solid var(--rule-soft);
+      font-size: 11px;
+      color: var(--ink-dim);
+      text-align: center;
+      font-style: italic;
+    }
+    .sticky-capture {
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      background: var(--paper);
+      border-top: 1px solid var(--rule);
+      padding: 14px 24px;
+      box-shadow: 0 -4px 12px rgba(0,0,0,0.04);
+    }
+    .sticky-inner {
+      max-width: 640px;
+      margin: 0 auto;
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+    .sticky-inner input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      border-bottom: 1px solid var(--rule);
+      font-family: inherit;
+      font-size: 15px;
+      color: var(--ink);
+      outline: none;
+      padding: 6px 0;
+      font-style: italic;
+    }
+    .sticky-inner input::placeholder { color: var(--ink-dim); }
+    .sticky-inner .pin {
+      font-size: 12px;
+      color: var(--accent);
+      text-decoration: underline;
+      text-underline-offset: 2px;
+      cursor: pointer;
+      letter-spacing: 0.05em;
+      font-variant: small-caps;
+      font-weight: 700;
+    }
+  </style>
+</head>
+<body>
+<div class="shell">
+
+  <header class="masthead">
+    <h1>The Executive Brief</h1>
+    <div class="dateline">Thursday · 28 May 2026 · Brain v4.6</div>
+  </header>
+
+  <p class="lede">
+    The Brain needs your attention on <span class="count">nine matters</span> this morning.
+  </p>
+  <p class="lede-sub">
+    You have three captured thoughts in your queue. One channel item is held for your relay. The remainder are decisions and source narratives awaiting your hand. <a class="reconcile">Reconcile the channel</a> when ready.
+  </p>
+
+  <div class="quarter-anchors">
+    <h2>Q2 Anchors — Apr–Jun 2026</h2>
+    <ul>
+      <li><span class="label">Brewery</span> · Houston + Austin distribution</li>
+      <li><span class="label">Coffee</span> · Summer menu + seasonal drop</li>
+      <li><span class="label">THC</span> · 5mg singles food-service launch</li>
+      <li><span class="label">BJJ</span> · Purple belt grading</li>
+      <li><span class="label">Family</span> · Big Bend, August, planned + booked</li>
+      <li><span class="label">Spanish</span> · B1 by September</li>
+    </ul>
+  </div>
+
+  <div class="focus-bar">
+    Focus:
+    <a class="active">All</a>
+    <a>STB · Brewery</a>
+    <a>STB · Coffee</a>
+    <a>STB · Texzas</a>
+    <a>STB · THC</a>
+    <a>Personal</a>
+  </div>
+
+  <section class="section">
+    <h2 class="section-head">Captured by You</h2>
+
+    <div class="capture">
+      <div class="prompt">Pin a thought —</div>
+      <input type="text" placeholder="What's on your mind?" />
+    </div>
+
+    <div class="your-thought">
+      <div class="text">Ask Advisor whether Pulse should pull from Master Calendar entries directly or via Brain mirror.</div>
+      <div class="meta">Captured two hours ago · Tagged for Advisor · STB Brewery</div>
+    </div>
+    <div class="your-thought">
+      <div class="text">THC distro idea — bundle 5mg singles into the food-service deck for Q3, lead with the Houston accounts already pouring our beer.</div>
+      <div class="meta">Captured yesterday · Unrouted · STB THC</div>
+    </div>
+    <div class="your-thought">
+      <div class="text">Personal rock — write Marin's mid-year review notes before next L10.</div>
+      <div class="meta">Captured three days ago · Tagged for Personal Brain</div>
+    </div>
+  </section>
+
+  <section class="section">
+    <h2 class="section-head">Source Narratives Awaiting Your Hand</h2>
+
+    <div class="entry">
+      <div class="title">Carlos Cortez — Hire from Silver Eagle, November 2019</div>
+      <div class="by">Architect, on behalf of Living Archive · held eight days</div>
+      <div class="body">
+        <p>The personnel sheet has the facts. Doctrine 3 wants your account: who said what, what you weighed, how it has played out. Until you tell the story, the row stays held — and stale.</p>
+      </div>
+      <div class="actions">
+        <a>Tell the story</a>
+        <a class="muted">Defer seven days</a>
+        <a class="muted">Drop</a>
+      </div>
+    </div>
+
+    <div class="entry">
+      <div class="title">Lone Star Beverage Brands — 3-market wholesale relationship</div>
+      <div class="by">Architect, on behalf of Living Archive · held eight days</div>
+      <div class="body">
+        <p>Placeholder row exists; awaiting your first-person account of the relationship's shape and span.</p>
+      </div>
+      <div class="actions">
+        <a>Tell the story</a>
+        <a class="muted">Defer seven days</a>
+        <a class="muted">Drop</a>
+      </div>
+    </div>
+
+    <div class="entry">
+      <div class="title">Solstice / Johnnyo / Gorrity — Contractor file enrichment</div>
+      <div class="by">Architect · held five days</div>
+      <div class="body">
+        <p>Three contractor files queued for context. The Anthony Gorrity individual entry was tombstoned for miscategorization; recapture under the Johnnyo Design entity.</p>
+      </div>
+      <div class="actions">
+        <a>Tell the story</a>
+        <a class="muted">Defer seven days</a>
+        <a class="muted">Drop</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <h2 class="section-head">Decisions Pending Your Call</h2>
+
+    <div class="entry urgent">
+      <div class="title">ADR-004 — Release Agent, strategic veto gate</div>
+      <div class="by">Architect · posted one hour ago · blocks Console v1 build</div>
+      <div class="body">
+        <p>A scoped API agent that reads Console-staged rows from Intake Queue and reconciles them to canonical destinations. Architect's recommendation is to approve — scope is narrow, failure mode is bounded, and approving unblocks Console v1.</p>
+      </div>
+      <div class="actions">
+        <a>Approve</a>
+        <a class="muted">Modify</a>
+        <a class="muted">Reject</a>
+        <a class="muted">Read ADR in full</a>
+      </div>
+    </div>
+
+    <div class="entry">
+      <div class="title">Party Pay Brain schema build — Workflow A approval</div>
+      <div class="by">Architect · waiting since 20 May</div>
+      <div class="body">
+        <p>Spec is staged; real gate is Triple Seat + Paysafe API access (provider-side). Build approval still required before any Brain mutation.</p>
+      </div>
+      <div class="actions">
+        <a>Approve</a>
+        <a class="muted">Modify</a>
+        <a class="muted">Reject</a>
+      </div>
+    </div>
+
+    <div class="entry">
+      <div class="title">TSP2 — step one or step two?</div>
+      <div class="by">Code · waiting fifteen days · Triple Seat Phase 2 paused at this gate</div>
+      <div class="body">
+        <p>Sandbox-first path (safer, slower) or proceed direct (faster, commits to live integration earlier). Your appetite for risk versus speed.</p>
+      </div>
+      <div class="actions">
+        <a>Step one</a>
+        <a>Step two</a>
+        <a class="muted">Defer seven days</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="external">
+    <h3>Was You, Now External</h3>
+    <ul>
+      <li>Triple Seat API key — your request is in <span class="when">awaiting provider grant, six days</span></li>
+      <li>Mailchimp + Clover access — your requests are in <span class="when">awaiting provider grant, six days</span></li>
+    </ul>
+  </section>
+
+  <div class="colophon">
+    Browse the Brain · Recent activity · Agent status · Settings
+  </div>
+
+</div>
+
+<div class="sticky-capture">
+  <div class="sticky-inner">
+    <input type="text" placeholder="A quick thought, pinned for later…" />
+    <span class="pin">Pin</span>
+  </div>
+</div>
+
+</body>
+</html>
