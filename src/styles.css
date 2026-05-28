@@ -811,6 +811,42 @@ html { scroll-behavior: smooth; }
 .overlay-summary strong { color: var(--text); }
 .overlay-summary em { color: var(--text-faint); font-style: italic; }
 .age-stale { color: var(--red); font-weight: 600; }
+
+/* Reconcile overlay item list */
+.reconcile-list {
+  list-style: none;
+  padding: 0;
+  margin: 8px 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.reconcile-list li {
+  padding: 8px 10px;
+  background: var(--panel-3, #1a1f33);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  font-size: 12.5px;
+  line-height: 1.45;
+}
+.reconcile-marker {
+  display: inline-block;
+  min-width: 16px;
+  color: var(--text-faint);
+  font-weight: 600;
+  margin-right: 4px;
+}
+.reconcile-marker.ok { color: #4ade80; }
+.reconcile-marker.bad { color: var(--red); }
+.reconcile-meta {
+  color: var(--text-faint);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.reconcile-subj { color: var(--text); }
+.reconcile-list a { color: var(--text-dim); text-decoration: none; margin-left: 4px; }
+.reconcile-list a:hover { color: var(--text); }
 .overlay-actions {
   padding: 14px 22px;
   border-top: 1px solid var(--line);

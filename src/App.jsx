@@ -52,6 +52,41 @@ function freshnessState(iso) {
   return 'bad';
 }
 
+function escapeHtml(s = '') {
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+// Render a list of channel rows for the Reconcile overlay. Variant controls
+// the trailing marker per item (preview = arrow, pending = spinner-ish dot,
+// result = ✓ / ✗ with optional error tooltip).
+function renderItemList(items, variant = 'preview') {
+  if (!items.length) return '<em>Nothing to reconcile.</em>';
+  const rows = items
+    .map((it) => {
+      let marker = '<span class="reconcile-marker">→</span>';
+      if (variant === 'pending') marker = '<span class="reconcile-marker">…</span>';
+      if (variant === 'result') {
+        marker = it.outcome === 'acked'
+          ? '<span class="reconcile-marker ok">✓</span>'
+          : `<span class="reconcile-marker bad" title="${escapeHtml(it.error || 'failed')}">✗</span>`;
+      }
+      const subj = escapeHtml(it.subject || '(no subject)');
+      const from = escapeHtml(it.from || '?');
+      const to = escapeHtml(it.to || '?');
+      const type = escapeHtml(it.type || '');
+      const link = it.url
+        ? `<a href="${it.url}" target="_blank" rel="noreferrer">↗</a>`
+        : '';
+      return `<li>${marker} <span class="reconcile-meta">${from} → ${to}${type ? ' · ' + type : ''}</span><br/><span class="reconcile-subj">${subj}</span> ${link}</li>`;
+    })
+    .join('');
+  return `<ul class="reconcile-list">${rows}</ul>`;
+}
+
 // Best-effort mapping from Living Archive Tag set → the domain-colored left
 // stripe class. First-match wins; defaults to brewery (most common).
 function extraClassForTags(tags = []) {
@@ -278,10 +313,52 @@ export default function App() {
     });
   }
 
-  async function onReconcile() {
+  // Reconcile is now a two-stage flow: clicking opens a preview overlay listing
+  // exactly what will move; a second click inside the overlay executes the
+  // writes and re-renders the overlay with what landed, including links.
+  function onReconcile() {
     if (reconcileTargets.length === 0 || reconciling) return;
+    openReconcilePreview(reconcileTargets);
+  }
+
+  function openReconcilePreview(items) {
+    setOverlay({
+      open: true,
+      payload: {
+        sectionTag: '⚡ Reconcile — preview',
+        title: `${items.length} channel item${items.length === 1 ? '' : 's'} pending acknowledgement`,
+        meta: {
+          'Filter': 'To:Code · Status:Unread · Type:Question or Action requested',
+          'Action': 'Flip Status → Acknowledged, append doctrinal trace footer, write one Reconciliation Log row',
+          'Reversible?': 'Status flip is — re-edit in Notion. Log row is append-only.',
+        },
+        summary: renderItemList(items, 'preview'),
+        actions: [
+          {
+            kind: 'primary',
+            label: `Reconcile ${items.length} item${items.length === 1 ? '' : 's'}`,
+            onClick: () => executeReconcile(items),
+          },
+          { kind: 'ghost', label: 'Cancel', onClick: () => setOverlay({ open: false, payload: null }) },
+        ],
+      },
+    });
+  }
+
+  async function executeReconcile(items) {
     setReconciling(true);
-    const items = reconcileTargets;
+    // Re-render the overlay in "working" state so Garrison sees feedback.
+    setOverlay({
+      open: true,
+      payload: {
+        sectionTag: '⚡ Reconcile — running',
+        title: `Reconciling ${items.length} item${items.length === 1 ? '' : 's'}…`,
+        meta: { Status: 'Pushing acks to Brain, then writing the audit row.' },
+        summary: renderItemList(items, 'pending'),
+        actions: [],
+      },
+    });
+
     const acknowledgedAt = new Date().toISOString();
     const results = await Promise.allSettled(
       items.map((it) =>
@@ -297,14 +374,24 @@ export default function App() {
         }).then((r) => r.json())
       )
     );
-    const successes = results.filter((r) => r.status === 'fulfilled' && r.value?.ok);
-    const failures = results.filter((r) => r.status === 'rejected' || !r.value?.ok);
+    const outcomes = items.map((it, i) => {
+      const r = results[i];
+      const ok = r.status === 'fulfilled' && r.value?.ok;
+      return {
+        ...it,
+        outcome: ok ? 'acked' : 'failed',
+        error: ok ? null : (r.status === 'rejected' ? r.reason?.message : r.value?.error),
+      };
+    });
+    const successes = outcomes.filter((o) => o.outcome === 'acked');
+    const failures = outcomes.filter((o) => o.outcome === 'failed');
 
     // Push phase: write one Reconciliation Log entry summarizing what moved.
     // We log even on partial failure so the audit trail reflects what actually shipped.
+    let logUrl = null;
     if (successes.length > 0) {
       try {
-        const fromCounts = items.reduce((acc, it) => {
+        const fromCounts = successes.reduce((acc, it) => {
           const k = `${it.from} → ${it.to}`;
           acc[k] = (acc[k] || 0) + 1;
           return acc;
@@ -312,7 +399,7 @@ export default function App() {
         const summary = Object.entries(fromCounts)
           .map(([k, v]) => `${v} ${k}`)
           .join('; ');
-        await fetch('/api/submit', {
+        const logRes = await fetch('/api/submit', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -323,19 +410,43 @@ export default function App() {
             notes: failures.length ? `${failures.length} push failure(s) in same batch — see Console logs.` : '',
           }),
         });
+        const logJson = await logRes.json();
+        if (logJson.ok) logUrl = logJson.url;
       } catch (err) {
         console.error('Reconciliation Log write failed:', err);
       }
     }
 
-    if (failures.length) {
-      console.error('Reconcile failures:', failures);
-      alert(
-        `Reconciled ${items.length - failures.length} of ${items.length} items. ${failures.length} failed — see console.`
-      );
-    } else {
-      alert(`Reconciled ${items.length} channel item${items.length === 1 ? '' : 's'}. Log entry written.`);
+    // Result overlay — show every item's outcome with a link, plus link to the
+    // log row so Garrison has a one-click jump to the audit entry he just made.
+    const actions = [];
+    if (logUrl) {
+      actions.push({
+        kind: 'primary',
+        label: 'Open log entry in Notion ↗',
+        onClick: () => window.open(logUrl, '_blank', 'noopener,noreferrer'),
+      });
     }
+    actions.push({ kind: 'ghost', label: 'Close', onClick: () => setOverlay({ open: false, payload: null }) });
+
+    setOverlay({
+      open: true,
+      payload: {
+        sectionTag: failures.length === 0 ? '⚡ Reconcile — complete' : '⚡ Reconcile — partial',
+        title:
+          failures.length === 0
+            ? `${successes.length} item${successes.length === 1 ? '' : 's'} acknowledged · log row written`
+            : `${successes.length}/${items.length} acknowledged · ${failures.length} failed`,
+        meta: {
+          Acknowledged: String(successes.length),
+          Failed: String(failures.length),
+          Log: logUrl ? '<a href="' + logUrl + '" target="_blank" rel="noreferrer">open new Reconciliation Log row ↗</a>' : '(not written — no successes)',
+        },
+        summary: renderItemList(outcomes, 'result'),
+        actions,
+      },
+    });
+
     reloadReconcileTargets();
     setReconciling(false);
   }
