@@ -41,13 +41,18 @@ export default function App() {
       .catch((err) => setChannel({ items: [], loaded: true, error: err.message }));
   }, []);
 
-  // Channel filter — items needing Garrison's relay: Unread Question/Action-requested.
-  // Acknowledged rows fall out of the section after Reconcile.
+  // Channel filter — items where Code is the recipient AND Garrison hasn't yet
+  // released the acknowledgement. Bounded to To: Code because Code has
+  // acknowledge-authority on its own queue per ADR-003 / Doctrine 8; clicking
+  // Reconcile authorizes Code-via-Console to ack on Garrison's behalf.
+  // Items addressed To: Architect / Advisor / etc. belong in those agents'
+  // queues, not Garrison's — we don't surface them here.
   function filterChannel(items) {
     return (items || []).filter(
       (it) =>
         (it.type === 'Question' || it.type === 'Action requested') &&
-        it.status === 'Unread'
+        it.status === 'Unread' &&
+        it.to === 'Code'
     );
   }
 
@@ -175,6 +180,7 @@ export default function App() {
     if (channel.items.length === 0 || reconciling) return;
     setReconciling(true);
     const items = channel.items;
+    const acknowledgedAt = new Date().toISOString();
     const results = await Promise.allSettled(
       items.map((it) =>
         fetch('/api/submit', {
@@ -184,6 +190,7 @@ export default function App() {
             submissionType: 'status_update',
             pageId: it.id,
             newStatus: 'Acknowledged',
+            note: `Acknowledged by Garrison via Executive Console at ${acknowledgedAt}. Code marked this on its own queue per ADR-003 / Doctrine 8 — no agent reply composed.`,
           }),
         }).then((r) => r.json())
       )
