@@ -1,131 +1,329 @@
-import { useState } from 'react';
-import SubmissionForm from './SubmissionForm.jsx';
+import { useEffect, useState } from 'react';
+import Header from './components/Header.jsx';
+import RocksStrip from './components/RocksStrip.jsx';
+import DomainFilter from './components/DomainFilter.jsx';
+import Hero from './components/Hero.jsx';
+import Section from './components/Section.jsx';
+import Item from './components/Item.jsx';
+import YourQueueSection from './components/YourQueueSection.jsx';
+import CaptureBar from './components/CaptureBar.jsx';
+import SummaryOverlay from './components/SummaryOverlay.jsx';
+import SecondaryNav from './components/SecondaryNav.jsx';
 import {
-  ActivityView,
-  PinsView,
-  QuestionsView,
-  ChannelView,
-  PendingWorkView,
-} from './Dashboard.jsx';
-
-const TABS = [
-  { id: 'submit', label: '➕ Submit' },
-  { id: 'activity', label: '📋 Activity' },
-  { id: 'pins', label: '📌 PINs' },
-  { id: 'questions', label: '❓ Questions' },
-  { id: 'pending', label: '🔀 Pending Work' },
-  { id: 'channel', label: '🔄 Channel' },
-];
+  loadQueue,
+  addThought,
+  routeThought,
+  dismissThought,
+  relativeAge,
+} from './state/queue.js';
+import {
+  MOCK_SOURCE_NARRATIVES,
+  MOCK_DECISIONS,
+  MOCK_INFO_EXTERNAL,
+} from './state/mockData.js';
 
 export default function App() {
-  const [tab, setTab] = useState('submit');
-  const [lastResult, setLastResult] = useState(null);
+  const [queue, setQueue] = useState(() => loadQueue());
+  const [activeDomain, setActiveDomain] = useState('all');
+  const [overlay, setOverlay] = useState({ open: false, payload: null });
+  const [infoOpen, setInfoOpen] = useState(false);
+  const [channel, setChannel] = useState({ items: [], loaded: false, error: null });
+
+  // Load real channel data — Type=Question or Action requested,
+  // recent, not already addressed to Code (since those are Code's to ack).
+  useEffect(() => {
+    fetch('/api/list?kind=channel_recent&limit=20')
+      .then((r) => r.json())
+      .then((d) => {
+        if (!d.ok) throw new Error(d.error || 'fetch failed');
+        const filtered = (d.items || []).filter(
+          (it) =>
+            (it.type === 'Question' || it.type === 'Action requested') &&
+            (it.status === 'Unread' || it.status === 'Acknowledged')
+        );
+        setChannel({ items: filtered, loaded: true, error: null });
+      })
+      .catch((err) => setChannel({ items: [], loaded: true, error: err.message }));
+  }, []);
+
+  // Esc closes overlay
+  useEffect(() => {
+    function onKey(e) {
+      if (e.key === 'Escape') setOverlay({ open: false, payload: null });
+    }
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, []);
+
+  function capture(text) { setQueue(addThought(text)); }
+  function route(id, agent) {
+    const item = queue.find((q) => q.id === id);
+    const next = item?.routedTo === agent ? null : agent;
+    setQueue(routeThought(id, next));
+  }
+  function dismiss(id) { setQueue(dismissThought(id)); }
+
+  function openSummaryForQueueItem(id) {
+    const item = queue.find((q) => q.id === id);
+    if (!item) return;
+    setOverlay({
+      open: true,
+      payload: {
+        sectionTag: '💭 Your captured thought',
+        title: item.text,
+        meta: {
+          Captured: relativeAge(item.capturedAt),
+          'Routed for': item.routedTo || 'Unrouted — sitting until you decide',
+          Source: 'You (this Console)',
+        },
+        summary:
+          item.routedTo
+            ? `Routed to <strong>${item.routedTo}</strong>. Your next ${item.routedTo} session will see this as starting context.`
+            : `Sitting unrouted. Pick a destination on the item to surface it in your next session with that agent.`,
+        actions: [
+          {
+            kind: 'ghost',
+            label: 'Edit thought (v2)',
+            onClick: () => alert('Edit lands in v2.'),
+          },
+          {
+            kind: 'danger',
+            label: 'Dismiss',
+            onClick: () => {
+              dismiss(item.id);
+              setOverlay({ open: false, payload: null });
+            },
+          },
+        ],
+      },
+    });
+  }
+
+  function openSummaryForMock(item, sectionTag) {
+    setOverlay({
+      open: true,
+      payload: {
+        sectionTag,
+        title: item.title,
+        meta: {
+          ...(item.destination && { Destination: item.destination }),
+          ...(item.by && { Author: item.by }),
+          ...(item.age && {
+            Age:
+              item.ageState === 'stale'
+                ? `<span class="age-stale">${item.age}</span>`
+                : item.age,
+          }),
+          ...(item.note && { Note: item.note }),
+        },
+        summary:
+          '<em>This item is currently mocked. Real data wiring is pending Architect schema work — see the project memory file for which schema additions are owed.</em>',
+        actions: [{ kind: 'ghost', label: 'Close' }],
+      },
+    });
+  }
+
+  function onReconcile() {
+    alert(
+      'Reconcile lands in v2 — will batch-acknowledge channel rows + propagate across agents/platforms in one click.'
+    );
+  }
+
+  // Counts
+  const queueCount = queue.length;
+  const sourceCount = MOCK_SOURCE_NARRATIVES.length;
+  const decisionCount = MOCK_DECISIONS.length;
+  const channelCount = channel.items.length;
+  const totalNeedsYou = queueCount + sourceCount + decisionCount + channelCount;
 
   return (
-    <div className="app-shell wide">
-      <header className="topbar">
-        <div className="brand">
-          <div className="wordmark">Spindletap</div>
-          <div className="app-name">Executive Console</div>
-        </div>
-        <div className="brain-pill">
-          <span className="dot" />
-          Brain Live · v4.6
-        </div>
-      </header>
+    <div className="shell">
+      <Header />
+      <RocksStrip />
+      <DomainFilter active={activeDomain} onChange={setActiveDomain} />
 
-      <nav className="tabs">
-        {TABS.map((t) => (
-          <button
-            key={t.id}
-            className={`tab ${tab === t.id ? 'active' : ''}`}
-            onClick={() => setTab(t.id)}
-          >
-            {t.label}
-          </button>
+      <Hero
+        count={totalNeedsYou}
+        queueCount={queueCount}
+        channelCount={channelCount}
+        lastReconciled="never (v1)"
+        onReconcile={onReconcile}
+      />
+
+      <YourQueueSection
+        items={queue}
+        onCapture={capture}
+        onRoute={route}
+        onDismiss={dismiss}
+        onOpenSummary={openSummaryForQueueItem}
+      />
+
+      <Section icon="📖" title="Source narratives needed" count={sourceCount} mocked>
+        {MOCK_SOURCE_NARRATIVES.map((it) => (
+          <Item
+            key={it.id}
+            title={it.title}
+            summaryId={it.id}
+            onOpenSummary={() => openSummaryForMock(it, '📖 Source narrative needed')}
+            meta={
+              <>
+                {it.domainLabel && (
+                  <span className={`domain-badge ${it.domainTone || 'stb'}`}>{it.domainLabel}</span>
+                )}
+                <span>{it.meta}</span>
+                <span className="sep">·</span>
+                <span>destination: {it.destination}</span>
+                <span className="sep">·</span>
+                <span className={`age ${it.ageState || ''}`}>{it.age}</span>
+              </>
+            }
+            actions={
+              <>
+                <button type="button" className="btn primary">Tell the story</button>
+                <button type="button" className="btn secondary">Defer 7d</button>
+                <button type="button" className="btn danger">Drop</button>
+                <button type="button" className="btn ghost">
+                  Open in Notion <span className="btn-arrow">↗</span>
+                </button>
+              </>
+            }
+          />
         ))}
-      </nav>
+      </Section>
 
-      <main className="content">
-        {tab === 'submit' && (
-          <>
-            <SubmissionForm onSubmitted={setLastResult} />
-            {lastResult && (
-              <div className="result-card success">
-                <div className="result-title">✓ Submitted to Brain</div>
-                <div className="result-meta">
-                  <a href={lastResult.url} target="_blank" rel="noreferrer">
-                    Open row in Notion →
-                  </a>
-                </div>
-              </div>
-            )}
-          </>
+      <Section icon="⚖️" title="Decisions pending your call" count={decisionCount} mocked>
+        {MOCK_DECISIONS.map((it) => (
+          <Item
+            key={it.id}
+            urgency={it.urgency}
+            title={it.title}
+            summaryId={it.id}
+            onOpenSummary={() => openSummaryForMock(it, '⚖️ Decision pending your call')}
+            meta={
+              <>
+                {it.domainLabel && (
+                  <span className={`domain-badge ${it.domainTone || 'stb'}`}>{it.domainLabel}</span>
+                )}
+                <span>{it.by}</span>
+                {it.posted && (
+                  <>
+                    <span className="sep">·</span>
+                    <span>{it.posted}</span>
+                  </>
+                )}
+                {it.note && (
+                  <>
+                    <span className="sep">·</span>
+                    <span className={it.ageState ? `age ${it.ageState}` : undefined}>{it.note}</span>
+                  </>
+                )}
+                {it.age && !it.note && (
+                  <>
+                    <span className="sep">·</span>
+                    <span className={`age ${it.ageState || ''}`}>{it.age}</span>
+                  </>
+                )}
+              </>
+            }
+            actions={
+              <>
+                <button type="button" className="btn primary">Approve</button>
+                <button type="button" className="btn secondary">Modify</button>
+                <button type="button" className="btn danger">Reject</button>
+                <button type="button" className="btn ghost">
+                  Open <span className="btn-arrow">↗</span>
+                </button>
+              </>
+            }
+          />
+        ))}
+      </Section>
+
+      <Section icon="🔄" title="Channel items needing your relay" count={channelCount}>
+        {!channel.loaded && <div className="loading">Loading channel…</div>}
+        {channel.loaded && channel.error && (
+          <div className="error">⚠ {channel.error}</div>
         )}
-
-        {tab === 'activity' && (
-          <Panel
-            title="Recent Console Submissions"
-            subtitle="Everything you've submitted through this console, newest first."
-          >
-            <ActivityView />
-          </Panel>
+        {channel.loaded && !channel.error && channel.items.length === 0 && (
+          <div className="empty">Channel is clear — no agent threads waiting on your relay.</div>
         )}
+        {channel.items.map((it) => (
+          <Item
+            key={it.id}
+            title={`${it.from} → ${it.to}: ${it.subject}`}
+            meta={
+              <>
+                <span>Type: {it.type}</span>
+                <span className="sep">·</span>
+                <span
+                  className={`pill status-${(it.status || '')
+                    .toLowerCase()
+                    .replace(/['\s]+/g, '-')}`}
+                >
+                  {it.status}
+                </span>
+                {it.dateSent && (
+                  <>
+                    <span className="sep">·</span>
+                    <span className="date">{it.dateSent}</span>
+                  </>
+                )}
+              </>
+            }
+            actions={
+              <>
+                <a
+                  href={it.url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="btn primary"
+                >
+                  Open in Notion <span className="btn-arrow">↗</span>
+                </a>
+                <button type="button" className="btn ghost">
+                  Read thread (v2)
+                </button>
+              </>
+            }
+          />
+        ))}
+      </Section>
 
-        {tab === 'pins' && (
-          <Panel
-            title="Active PINs"
-            subtitle="Pinned context items across the system, from any source."
-          >
-            <PinsView />
-          </Panel>
-        )}
-
-        {tab === 'questions' && (
-          <Panel
-            title="Open Questions"
-            subtitle="Questions still sitting unanswered or partially answered."
-          >
-            <QuestionsView />
-          </Panel>
-        )}
-
-        {tab === 'pending' && (
-          <Panel
-            title="Pending Work"
-            subtitle="What's queued or actively being worked on across agents."
-          >
-            <PendingWorkView />
-          </Panel>
-        )}
-
-        {tab === 'channel' && (
-          <Panel
-            title="Cross-Agent Channel"
-            subtitle="Most recent agent-to-agent messages, newest first."
-          >
-            <ChannelView />
-          </Panel>
-        )}
-      </main>
-
-      <footer className="footer">
-        <span>Tier 1 live · Tier 2 staging via Intake Queue · v0.2</span>
-      </footer>
-    </div>
-  );
-}
-
-function Panel({ title, subtitle, children }) {
-  return (
-    <div className="card">
-      <div className="card-header">
-        <div>
-          <h2>{title}</h2>
-          {subtitle && <div className="card-subtitle">{subtitle}</div>}
+      <div className={`info-section ${infoOpen ? 'open' : ''}`}>
+        <div className="info-header" onClick={() => setInfoOpen((s) => !s)}>
+          <span className="section-icon" style={{ fontSize: 14 }}>ℹ️</span>
+          <span className="info-title">
+            Was you, now external — {MOCK_INFO_EXTERNAL.length} item
+            {MOCK_INFO_EXTERNAL.length === 1 ? '' : 's'} waiting on providers
+          </span>
+          <span className="mocked-tag" title="Placeholder — wiring to Pending Work pending">
+            🧪 mock
+          </span>
+          <span className="section-chevron" style={{ marginLeft: 'auto' }}>
+            {infoOpen ? '▲' : '▼'}
+          </span>
         </div>
+        {infoOpen && (
+          <div className="info-list">
+            {MOCK_INFO_EXTERNAL.map((i) => (
+              <div key={i.id} className="info-row">
+                <span>{i.text}</span>
+                <span className="external">{i.external}</span>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
-      <div className="card-body list-body">{children}</div>
+
+      <SecondaryNav />
+
+      <SummaryOverlay
+        open={overlay.open}
+        onClose={() => setOverlay({ open: false, payload: null })}
+        payload={overlay.payload}
+      />
+
+      <CaptureBar onCapture={capture} />
     </div>
   );
 }

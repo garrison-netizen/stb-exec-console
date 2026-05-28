@@ -2,7 +2,13 @@
   "version": "0.0.1",
   "configurations": [
     {
-      "name": "exec-console",
+      "name": "dev",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev"],
+      "port": 5181
+    },
+    {
+      "name": "mockup-static",
       "runtimeExecutable": "npx",
       "runtimeArgs": ["serve", "-p", "3737", "."],
       "port": 3737
