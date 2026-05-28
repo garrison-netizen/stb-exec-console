@@ -14,10 +14,45 @@ import {
   relativeAge,
 } from './state/queue.js';
 import {
-  MOCK_SOURCE_NARRATIVES,
   MOCK_DECISIONS,
   MOCK_INFO_EXTERNAL,
 } from './state/mockData.js';
+
+// Source Narrative Intake page — Architect's pointer for "tell the story".
+const SOURCE_NARRATIVE_INTAKE_URL = 'https://www.notion.so/3651c57ac02b810eb1b4f724dec7c99d';
+
+// Agent Freshness staleness thresholds (hours since Last loaded).
+const FRESH_HRS = 24;   // <24h → ok
+const STALE_HRS = 120;  // 24–120h → stale; >120h or null → bad
+
+function relAgeShort(iso) {
+  if (!iso) return 'never';
+  const mins = Math.floor((Date.now() - new Date(iso).getTime()) / 60000);
+  if (mins < 1) return 'now';
+  if (mins < 60) return `${mins}m`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h`;
+  const days = Math.floor(hrs / 24);
+  return `${days}d`;
+}
+
+function freshnessState(iso) {
+  if (!iso) return 'bad';
+  const hrs = (Date.now() - new Date(iso).getTime()) / 3_600_000;
+  if (hrs < FRESH_HRS) return 'ok';
+  if (hrs < STALE_HRS) return 'stale';
+  return 'bad';
+}
+
+// Best-effort mapping from Living Archive Tag set → the domain-colored left
+// stripe class. First-match wins; defaults to brewery (most common).
+function extraClassForTags(tags = []) {
+  const tagSet = new Set(tags);
+  if (tagSet.has('Coffee')) return 'dom-coffee';
+  if (tagSet.has('THC')) return 'dom-thc';
+  if (tagSet.has('Architecture')) return 'dom-system';
+  return 'dom-brewery';
+}
 
 export default function App() {
   const [queue, setQueue] = useState(() => loadQueue());
@@ -30,10 +65,18 @@ export default function App() {
   // what Reconcile will touch and to count "pending" for the sidebar button.
   const [reconcileTargets, setReconcileTargets] = useState([]);
 
+  // Agent Freshness — fetched from Agent Status DB (Architect 2026-05-28).
+  const [freshness, setFreshness] = useState({ items: [], loading: true, error: null });
+
+  // Source Narratives Needed — Living Archive rows with Needs narrative=true.
+  const [sourceNarratives, setSourceNarratives] = useState({ items: [], loading: true, error: null });
+
   // Load channel items where Code is the recipient + status Unread (matches
   // the doctrinal narrow filter shipped earlier today).
   useEffect(() => {
     reloadReconcileTargets();
+    reloadFreshness();
+    reloadSourceNarratives();
   }, []);
 
   function reloadReconcileTargets() {
@@ -50,6 +93,60 @@ export default function App() {
         setReconcileTargets(filtered);
       })
       .catch(() => {});
+  }
+
+  function reloadFreshness() {
+    setFreshness((s) => ({ ...s, loading: true, error: null }));
+    fetch('/api/list?kind=agent_freshness&limit=25')
+      .then((r) => r.json())
+      .then((d) => {
+        if (!d.ok) throw new Error(d.error || 'fetch failed');
+        const items = (d.items || []).map((a) => ({
+          ...a,
+          state: freshnessState(a.lastLoaded),
+          ts: a.lastLoaded ? `${relAgeShort(a.lastLoaded)} ago` : 'never',
+        }));
+        setFreshness({ items, loading: false, error: null });
+      })
+      .catch((err) => setFreshness({ items: [], loading: false, error: err.message }));
+  }
+
+  function reloadSourceNarratives() {
+    setSourceNarratives((s) => ({ ...s, loading: true, error: null }));
+    fetch('/api/list?kind=source_narratives_needed&limit=25')
+      .then((r) => r.json())
+      .then((d) => {
+        if (!d.ok) throw new Error(d.error || 'fetch failed');
+        setSourceNarratives({ items: d.items || [], loading: false, error: null });
+      })
+      .catch((err) => setSourceNarratives({ items: [], loading: false, error: err.message }));
+  }
+
+  // ─── Source Narrative actions ────────────────────────────────
+  async function tellTheStory(item) {
+    // Per Architect's mapping: row is already Needs narrative=true; the action
+    // is navigating Garrison to the Source Narrative Intake page to write it.
+    window.open(SOURCE_NARRATIVE_INTAKE_URL, '_blank', 'noopener,noreferrer');
+  }
+
+  async function dropNarrative(item) {
+    if (!confirm(`Drop the source-narrative request for "${item.title}"?\n\nThe Living Archive row stays; only the narrative ask is unflagged.`)) return;
+    try {
+      const res = await fetch('/api/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          submissionType: 'unmark_needs_narrative',
+          pageId: item.id,
+          note: `Source-narrative request dropped via Executive Console at ${new Date().toISOString()}. Garrison declined to author. Row preserved.`,
+        }),
+      });
+      const json = await res.json();
+      if (!json.ok) throw new Error(json.error || 'unflag failed');
+      reloadSourceNarratives();
+    } catch (err) {
+      alert(`Failed to drop: ${err.message}`);
+    }
   }
 
   // Esc closes overlay
@@ -140,14 +237,44 @@ export default function App() {
         }).then((r) => r.json())
       )
     );
+    const successes = results.filter((r) => r.status === 'fulfilled' && r.value?.ok);
     const failures = results.filter((r) => r.status === 'rejected' || !r.value?.ok);
+
+    // Push phase: write one Reconciliation Log entry summarizing what moved.
+    // We log even on partial failure so the audit trail reflects what actually shipped.
+    if (successes.length > 0) {
+      try {
+        const fromCounts = items.reduce((acc, it) => {
+          const k = `${it.from} → ${it.to}`;
+          acc[k] = (acc[k] || 0) + 1;
+          return acc;
+        }, {});
+        const summary = Object.entries(fromCounts)
+          .map(([k, v]) => `${v} ${k}`)
+          .join('; ');
+        await fetch('/api/submit', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            submissionType: 'reconcile_log',
+            capturedCountPushed: successes.length,
+            itemsPerDestination: `${successes.length} channel ack${successes.length === 1 ? '' : 's'} (To:Code Unread → Acknowledged) — ${summary}`,
+            reconciler: 'Garrison-via-Console',
+            notes: failures.length ? `${failures.length} push failure(s) in same batch — see Console logs.` : '',
+          }),
+        });
+      } catch (err) {
+        console.error('Reconciliation Log write failed:', err);
+      }
+    }
+
     if (failures.length) {
       console.error('Reconcile failures:', failures);
       alert(
         `Reconciled ${items.length - failures.length} of ${items.length} items. ${failures.length} failed — see console.`
       );
     } else {
-      alert(`Reconciled ${items.length} channel item${items.length === 1 ? '' : 's'}.`);
+      alert(`Reconciled ${items.length} channel item${items.length === 1 ? '' : 's'}. Log entry written.`);
     }
     reloadReconcileTargets();
     setReconciling(false);
@@ -155,12 +282,12 @@ export default function App() {
 
   // Counts
   const queueCount = queue.length;
-  const sourceCount = MOCK_SOURCE_NARRATIVES.length;
+  const sourceCount = sourceNarratives.items.length;
   const decisionCount = MOCK_DECISIONS.length;
   const externalCount = MOCK_INFO_EXTERNAL.length;
   const totalNeedsYou = queueCount + sourceCount + decisionCount;
-  // Mocked freshness count — count stale agents (state !== 'ok')
-  const staleAgentCount = 4; // mocked; real count once freshness wires
+  // Real stale agent count from Agent Status DB (state !== 'ok').
+  const staleAgentCount = freshness.items.filter((a) => a.state !== 'ok').length;
 
   return (
     <div className="grid">
@@ -171,8 +298,9 @@ export default function App() {
           needYou: totalNeedsYou,
           queueCount,
           staleCount: staleAgentCount,
-          lastReconciled: '3d', // mocked; real value once Reconciliation Log lands
+          lastReconciled: '3d', // mocked; surfacing from Reconciliation Log lands as a v2.4 polish
         }}
+        freshness={freshness}
         onReconcile={onReconcile}
         reconciling={reconciling}
         reconcilePending={reconcileTargets.length}
@@ -196,38 +324,84 @@ export default function App() {
           onOpenSummary={openSummaryForQueueItem}
         />
 
-        <Section icon="📖" title="Source narratives needed" count={sourceCount} mocked>
-          {MOCK_SOURCE_NARRATIVES.map((it) => (
-            <Item
-              key={it.id}
-              extraClass="dom-brewery"
-              title={it.title}
-              summaryId={it.id}
-              onOpenSummary={() => openSummaryForMock(it, '📖 Source narrative needed')}
-              meta={
+        <Section icon="📖" title="Source narratives needed" count={sourceCount}>
+          {sourceNarratives.loading && <div className="loading">Loading from Living Archive…</div>}
+          {sourceNarratives.error && (
+            <div className="error">
+              {sourceNarratives.error.includes('object_not_found') ? (
                 <>
-                  {it.domainLabel && (
-                    <span className={`domain-badge ${it.domainTone || 'stb'}`}>{it.domainLabel}</span>
-                  )}
-                  <span>{it.meta}</span>
-                  <span className="sep">·</span>
-                  <span>destination: {it.destination}</span>
-                  <span className="sep">·</span>
-                  <span className={`age ${it.ageState || ''}`}>{it.age}</span>
+                  ⚠ The Living Archive database isn't shared with the Console integration yet.
+                  <br />
+                  <span style={{ fontSize: 12, opacity: 0.85 }}>
+                    Open Living Archive in Notion → ⋯ menu → Connections → add <strong>STB Executive Console</strong>.
+                    Same one-time grant needed for Reconciliation Log.
+                  </span>
                 </>
-              }
-              actions={
-                <>
-                  <button type="button" className="btn primary">Tell the story</button>
-                  <button type="button" className="btn secondary">Defer 7d</button>
-                  <button type="button" className="btn danger">Drop</button>
-                  <button type="button" className="btn ghost">
-                    Open in Notion <span className="btn-arrow">↗</span>
-                  </button>
-                </>
-              }
-            />
-          ))}
+              ) : (
+                <>⚠ {sourceNarratives.error}</>
+              )}
+            </div>
+          )}
+          {!sourceNarratives.loading && !sourceNarratives.error && sourceCount === 0 && (
+            <div className="empty">No source narratives currently flagged.</div>
+          )}
+          {sourceNarratives.items.map((it) => {
+            const ageDays = it.date
+              ? Math.floor((Date.now() - new Date(it.date).getTime()) / 86_400_000)
+              : null;
+            const ageState = ageDays !== null && ageDays > 7 ? 'stale' : '';
+            const ageLabel = ageDays === null ? 'no date' : ageDays === 0 ? 'today' : `${ageDays}d ago`;
+            return (
+              <Item
+                key={it.id}
+                extraClass={extraClassForTags(it.tags)}
+                title={it.title || '(untitled Living Archive row)'}
+                summaryId={it.id}
+                onOpenSummary={() =>
+                  setOverlay({
+                    open: true,
+                    payload: {
+                      sectionTag: '📖 Source narrative needed',
+                      title: it.title || '(untitled)',
+                      meta: {
+                        ...(it.type && { Type: it.type }),
+                        ...(it.tags?.length && { Tags: it.tags.join(', ') }),
+                        Date: it.date || '(no date)',
+                        Destination: 'Living Archive (this row)',
+                      },
+                      summary:
+                        'Architect flagged this Living Archive row as needing your first-person source narrative (Doctrine 3). Click <strong>Tell the story</strong> to open the Source Narrative Intake page; click <strong>Drop</strong> if you\'ll never author it.',
+                      actions: [
+                        { kind: 'primary', label: 'Tell the story ↗', onClick: () => tellTheStory(it) },
+                        { kind: 'danger', label: 'Drop', onClick: () => { dropNarrative(it); setOverlay({ open: false, payload: null }); } },
+                        { kind: 'ghost', label: 'Open row ↗', onClick: () => window.open(it.url, '_blank', 'noopener,noreferrer') },
+                      ],
+                    },
+                  })
+                }
+                meta={
+                  <>
+                    {it.type && <span className="domain-badge stb">{it.type}</span>}
+                    {it.tags?.slice(0, 3).map((t) => (
+                      <span key={t} className="domain-badge stb">{t}</span>
+                    ))}
+                    <span>destination: Living Archive</span>
+                    <span className="sep">·</span>
+                    <span className={`age ${ageState}`}>{ageLabel}</span>
+                  </>
+                }
+                actions={
+                  <>
+                    <button type="button" className="btn primary" onClick={() => tellTheStory(it)}>Tell the story ↗</button>
+                    <button type="button" className="btn danger" onClick={() => dropNarrative(it)}>Drop</button>
+                    <a className="btn ghost" href={it.url} target="_blank" rel="noreferrer">
+                      Open in Notion <span className="btn-arrow">↗</span>
+                    </a>
+                  </>
+                }
+              />
+            );
+          })}
         </Section>
 
         <Section icon="⚖️" title="Decisions pending your call" count={decisionCount} mocked>

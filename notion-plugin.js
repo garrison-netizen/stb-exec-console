@@ -78,6 +78,9 @@ export function notionDevPlugin() {
             openQuestions: Boolean(process.env.NOTION_OPEN_QUESTIONS_DS),
             pendingWork: Boolean(process.env.NOTION_PENDING_WORK_DS),
             channel: Boolean(process.env.NOTION_CHANNEL_DS),
+            agentStatus: Boolean(process.env.NOTION_AGENT_STATUS_DS),
+            reconcileLog: Boolean(process.env.NOTION_RECONCILE_LOG_DS),
+            livingArchive: Boolean(process.env.NOTION_LIVING_ARCHIVE_DS),
           },
         });
       });

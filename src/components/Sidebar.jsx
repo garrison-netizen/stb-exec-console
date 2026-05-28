@@ -4,16 +4,21 @@ import { MOCK_ROCKS, DOMAINS, MOCK_AGENT_FRESHNESS } from '../state/mockData.js'
 // anchor against. Brand → Rocks → Focus filter → System Status → Agent
 // Freshness → Reconcile button (anchored bottom).
 //
-// Most data is MOCK for v1; real wiring depends on the multi-agent freshness
-// contract extension owed by Architect (proposal sent 2026-05-28).
+// Rocks is still MOCK (per-department surfaces pending Architect's Dashboard
+// mapping). Agent Freshness reads Agent Status DB live as of 2026-05-28.
 export default function Sidebar({
   activeDomain,
   onDomainChange,
   status, // { needYou, queueCount, staleCount, lastReconciled }
+  freshness, // { items: [{agent,lastLoaded,lastLoadedContext,state,ts}], loading, error }
   onReconcile,
   reconciling,
   reconcilePending, // number of items reconcile will actually touch
 }) {
+  const freshnessRows = freshness?.items || [];
+  const freshnessLoading = freshness?.loading;
+  const freshnessError = freshness?.error;
+  const showMock = !freshnessRows.length && !freshnessLoading;
   return (
     <aside className="side">
       <div className="brand">
@@ -103,13 +108,19 @@ export default function Sidebar({
       <div>
         <div className="panel-head">
           Agent Freshness
-          <span className="mocked-tag" style={{ marginLeft: 'auto' }} title="Mock — freshness contract pending Architect">mock</span>
+          {showMock && (
+            <span className="mocked-tag" style={{ marginLeft: 'auto' }} title="Agent Status DB unreachable — showing mock">mock</span>
+          )}
+          {freshnessLoading && (
+            <span className="mocked-tag" style={{ marginLeft: 'auto' }} title="Loading from Agent Status DB">…</span>
+          )}
         </div>
+        {freshnessError && <div className="error" style={{ fontSize: 11 }}>⚠ {freshnessError}</div>}
         <ul className="agents-list">
-          {MOCK_AGENT_FRESHNESS.map((a) => (
-            <li key={a.name} className={a.state}>
-              <span className="ag">{a.name}</span>
-              <span className="ts">{a.ts}</span>
+          {(freshnessRows.length ? freshnessRows : MOCK_AGENT_FRESHNESS).map((a) => (
+            <li key={a.agent || a.name} className={a.state}>
+              <span className="ag">{a.agent || a.name}</span>
+              <span className="ts" title={a.lastLoadedContext || ''}>{a.ts}</span>
             </li>
           ))}
         </ul>
