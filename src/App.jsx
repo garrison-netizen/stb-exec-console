@@ -36,15 +36,30 @@ export default function App() {
       .then((r) => r.json())
       .then((d) => {
         if (!d.ok) throw new Error(d.error || 'fetch failed');
-        const filtered = (d.items || []).filter(
-          (it) =>
-            (it.type === 'Question' || it.type === 'Action requested') &&
-            (it.status === 'Unread' || it.status === 'Acknowledged')
-        );
-        setChannel({ items: filtered, loaded: true, error: null });
+        setChannel({ items: filterChannel(d.items), loaded: true, error: null });
       })
       .catch((err) => setChannel({ items: [], loaded: true, error: err.message }));
   }, []);
+
+  // Channel filter — items needing Garrison's relay: Unread Question/Action-requested.
+  // Acknowledged rows fall out of the section after Reconcile.
+  function filterChannel(items) {
+    return (items || []).filter(
+      (it) =>
+        (it.type === 'Question' || it.type === 'Action requested') &&
+        it.status === 'Unread'
+    );
+  }
+
+  function reloadChannel() {
+    fetch('/api/list?kind=channel_recent&limit=20')
+      .then((r) => r.json())
+      .then((d) => {
+        if (!d.ok) throw new Error(d.error || 'fetch failed');
+        setChannel({ items: filterChannel(d.items), loaded: true, error: null });
+      })
+      .catch((err) => setChannel({ items: [], loaded: true, error: err.message }));
+  }
 
   // Esc closes overlay
   useEffect(() => {
@@ -123,10 +138,67 @@ export default function App() {
     });
   }
 
-  function onReconcile() {
-    alert(
-      'Reconcile lands in v2 — will batch-acknowledge channel rows + propagate across agents/platforms in one click.'
+  function openSummaryForChannelItem(it) {
+    setOverlay({
+      open: true,
+      payload: {
+        sectionTag: '🔄 Channel item needing your relay',
+        title: `${it.from} → ${it.to}: ${it.subject}`,
+        meta: {
+          Type: it.type,
+          Status: it.status,
+          'Date sent': it.dateSent || '—',
+        },
+        summary:
+          '<em>Full body lives in the underlying Notion row. Open it in Notion for the complete thread, or reconcile from the inbox to acknowledge in bulk.</em>',
+        actions: [
+          {
+            kind: 'primary',
+            label: 'Open in Notion ↗',
+            onClick: () => {
+              window.open(it.url, '_blank');
+              setOverlay({ open: false, payload: null });
+            },
+          },
+          {
+            kind: 'ghost',
+            label: 'Close',
+            onClick: () => setOverlay({ open: false, payload: null }),
+          },
+        ],
+      },
+    });
+  }
+
+  const [reconciling, setReconciling] = useState(false);
+  async function onReconcile() {
+    if (channel.items.length === 0 || reconciling) return;
+    setReconciling(true);
+    const items = channel.items;
+    const results = await Promise.allSettled(
+      items.map((it) =>
+        fetch('/api/submit', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            submissionType: 'status_update',
+            pageId: it.id,
+            newStatus: 'Acknowledged',
+          }),
+        }).then((r) => r.json())
+      )
     );
+    const failures = results.filter(
+      (r) => r.status === 'rejected' || !r.value?.ok
+    );
+    if (failures.length) {
+      console.error('Reconcile failures:', failures);
+      alert(
+        `Reconciled ${items.length - failures.length} of ${items.length} items. ${failures.length} failed — see console.`
+      );
+    }
+    reloadChannel();
+    setReconciling(false);
   }
 
   // Counts
@@ -251,6 +323,8 @@ export default function App() {
           <Item
             key={it.id}
             title={`${it.from} → ${it.to}: ${it.subject}`}
+            summaryId={it.id}
+            onOpenSummary={() => openSummaryForChannelItem(it)}
             meta={
               <>
                 <span>Type: {it.type}</span>
@@ -280,8 +354,12 @@ export default function App() {
                 >
                   Open in Notion <span className="btn-arrow">↗</span>
                 </a>
-                <button type="button" className="btn ghost">
-                  Read thread (v2)
+                <button
+                  type="button"
+                  className="btn ghost"
+                  onClick={() => openSummaryForChannelItem(it)}
+                >
+                  Read thread
                 </button>
               </>
             }
