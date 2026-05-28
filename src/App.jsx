@@ -516,7 +516,17 @@ export default function App() {
             </div>
           )}
           {!sourceNarratives.loading && !sourceNarratives.error && sourceCount === 0 && (
-            <div className="empty">No source narratives currently flagged.</div>
+            <div className="empty">
+              <div style={{ marginBottom: 6 }}>
+                <strong>Nothing waiting on you for a source narrative.</strong>
+              </div>
+              <div style={{ fontSize: 12, opacity: 0.75, lineHeight: 1.5 }}>
+                Entries land here when an agent flags a Living Archive row as needing
+                your first-person account (Doctrine 3) — either by creating a stub or by you
+                clicking <em>Tell the story</em> on an existing row. The flag schema went
+                live today; no rows are flagged yet.
+              </div>
+            </div>
           )}
           {sourceNarratives.items.map((it) => {
             const ageDays = it.date
