@@ -1,0 +1,1094 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>STB Executive Console</title>
+  <style>
+    :root {
+      --bg: #0f1117;
+      --surface: #1a1d27;
+      --surface2: #21253a;
+      --border: #2e3250;
+      --accent: #4f6ef7;
+      --accent-soft: #1e2d6b;
+      --green: #22c55e;
+      --green-soft: #14532d;
+      --amber: #f59e0b;
+      --amber-soft: #431a00;
+      --red: #ef4444;
+      --red-soft: #3f0f0f;
+      --text: #e2e8f0;
+      --text-muted: #64748b;
+      --text-dim: #94a3b8;
+      --pill-campaigns: #3b82f6;
+      --pill-holidays: #f97316;
+      --pill-internal: #22c55e;
+      --pill-products: #a855f7;
+      --pill-comms: #ec4899;
+      --radius: 10px;
+      --radius-sm: 6px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+      font-size: 14px;
+    }
+
+    /* ── SIDEBAR ─────────────────────────────────── */
+    .sidebar {
+      width: 220px;
+      min-width: 220px;
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      padding: 20px 0;
+    }
+
+    .sidebar-logo {
+      padding: 0 20px 24px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .sidebar-logo .wordmark {
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+    }
+
+    .sidebar-logo .app-name {
+      font-size: 17px;
+      font-weight: 700;
+      color: var(--text);
+      margin-top: 2px;
+    }
+
+    .sidebar-logo .brain-pill {
+      margin-top: 10px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--green-soft);
+      border: 1px solid var(--green);
+      color: var(--green);
+      font-size: 11px;
+      font-weight: 600;
+      padding: 3px 8px;
+      border-radius: 20px;
+    }
+
+    .brain-pill .dot {
+      width: 6px; height: 6px;
+      background: var(--green);
+      border-radius: 50%;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+
+    .nav {
+      padding: 16px 0;
+      flex: 1;
+    }
+
+    .nav-section-label {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      padding: 8px 20px 4px;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 9px 20px;
+      cursor: pointer;
+      color: var(--text-dim);
+      border-left: 3px solid transparent;
+      transition: all 0.15s;
+      font-size: 13.5px;
+    }
+
+    .nav-item:hover { background: var(--surface2); color: var(--text); }
+    .nav-item.active {
+      background: var(--accent-soft);
+      color: var(--accent);
+      border-left-color: var(--accent);
+      font-weight: 600;
+    }
+
+    .nav-item .badge {
+      margin-left: auto;
+      background: var(--accent);
+      color: #fff;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 1px 6px;
+      border-radius: 10px;
+    }
+
+    .sidebar-footer {
+      padding: 16px 20px;
+      border-top: 1px solid var(--border);
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .sidebar-footer .sync-line {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 4px;
+    }
+
+    /* ── MAIN ────────────────────────────────────── */
+    .main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .topbar {
+      padding: 16px 28px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--surface);
+    }
+
+    .topbar h1 { font-size: 18px; font-weight: 700; }
+    .topbar .sub { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+
+    .topbar-actions { display: flex; gap: 10px; align-items: center; }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 16px;
+      border-radius: var(--radius-sm);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      transition: all 0.15s;
+    }
+
+    .btn-ghost {
+      background: var(--surface2);
+      color: var(--text-dim);
+      border: 1px solid var(--border);
+    }
+    .btn-ghost:hover { color: var(--text); border-color: #4a5280; }
+
+    .btn-primary {
+      background: var(--accent);
+      color: #fff;
+    }
+    .btn-primary:hover { background: #3d5bdb; }
+
+    .btn-architect {
+      background: linear-gradient(135deg, #7c3aed, #4f6ef7);
+      color: #fff;
+      padding: 8px 20px;
+      font-size: 13px;
+    }
+    .btn-architect:hover { opacity: 0.9; }
+
+    /* ── CONTENT ─────────────────────────────────── */
+    .content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 24px 28px;
+    }
+
+    .view { display: none; }
+    .view.active { display: block; }
+
+    /* ── CARDS / GRID ────────────────────────────── */
+    .stat-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+      margin-bottom: 24px;
+    }
+
+    .stat-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 18px 20px;
+    }
+
+    .stat-card .label {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+    }
+
+    .stat-card .value {
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--text);
+      line-height: 1;
+    }
+
+    .stat-card .delta {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 6px;
+    }
+
+    .stat-card .delta.green { color: var(--green); }
+    .stat-card .delta.amber { color: var(--amber); }
+
+    .row-2 {
+      display: grid;
+      grid-template-columns: 1fr 380px;
+      gap: 20px;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+
+    .card-header {
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .card-header h2 {
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .card-body { padding: 16px 20px; }
+
+    /* ── WORKSTREAM LIST ─────────────────────────── */
+    .ws-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--border);
+      cursor: pointer;
+    }
+    .ws-item:last-child { border-bottom: none; }
+
+    .ws-status {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      margin-top: 5px;
+      flex-shrink: 0;
+    }
+    .ws-status.active { background: var(--green); box-shadow: 0 0 6px var(--green); }
+    .ws-status.paused { background: var(--amber); }
+    .ws-status.blocked { background: var(--red); }
+
+    .ws-title { font-size: 13.5px; font-weight: 600; color: var(--text); }
+    .ws-meta { font-size: 11.5px; color: var(--text-muted); margin-top: 3px; }
+
+    .ws-badge {
+      margin-left: auto;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 20px;
+      flex-shrink: 0;
+    }
+
+    .ws-badge.active { background: var(--green-soft); color: var(--green); border: 1px solid var(--green); }
+    .ws-badge.paused { background: var(--amber-soft); color: var(--amber); border: 1px solid var(--amber); }
+    .ws-badge.blocked { background: var(--red-soft); color: var(--red); border: 1px solid var(--red); }
+
+    /* ── ACTIVITY FEED ───────────────────────────── */
+    .feed-item {
+      display: flex;
+      gap: 12px;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+      align-items: flex-start;
+    }
+    .feed-item:last-child { border-bottom: none; }
+
+    .feed-icon {
+      width: 28px; height: 28px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      flex-shrink: 0;
+    }
+    .feed-icon.pin { background: var(--accent-soft); }
+    .feed-icon.sync { background: var(--green-soft); }
+    .feed-icon.decision { background: #2d1f4f; }
+
+    .feed-text { font-size: 13px; color: var(--text-dim); line-height: 1.5; }
+    .feed-text strong { color: var(--text); }
+    .feed-time { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+
+    /* ── SUBMIT VIEW ─────────────────────────────── */
+    .submit-layout {
+      display: grid;
+      grid-template-columns: 1fr 340px;
+      gap: 20px;
+    }
+
+    .form-group { margin-bottom: 18px; }
+
+    .form-group label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-dim);
+      margin-bottom: 7px;
+      letter-spacing: 0.03em;
+    }
+
+    .form-group input,
+    .form-group textarea,
+    .form-group select {
+      width: 100%;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 10px 12px;
+      color: var(--text);
+      font-size: 13.5px;
+      font-family: inherit;
+      outline: none;
+      transition: border 0.15s;
+      resize: vertical;
+    }
+
+    .form-group input:focus,
+    .form-group textarea:focus,
+    .form-group select:focus {
+      border-color: var(--accent);
+    }
+
+    .form-group textarea { min-height: 100px; }
+
+    .form-group select option { background: var(--surface2); }
+
+    .type-chips {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .type-chip {
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      background: var(--surface2);
+      transition: all 0.15s;
+    }
+    .type-chip:hover { border-color: var(--accent); color: var(--text); }
+    .type-chip.selected { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
+
+    .notify-box {
+      background: var(--accent-soft);
+      border: 1px solid var(--accent);
+      border-radius: var(--radius);
+      padding: 14px 16px;
+      margin-bottom: 18px;
+    }
+
+    .notify-box .notify-title {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--accent);
+      margin-bottom: 6px;
+    }
+
+    .notify-box p {
+      font-size: 12px;
+      color: var(--text-dim);
+      line-height: 1.5;
+    }
+
+    .toggle-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .toggle-row:last-child { border-bottom: none; }
+
+    .toggle-label { font-size: 13px; color: var(--text-dim); }
+    .toggle-label strong { color: var(--text); display: block; font-size: 13.5px; }
+
+    .toggle {
+      width: 36px; height: 20px;
+      background: var(--border);
+      border-radius: 10px;
+      position: relative;
+      cursor: pointer;
+      transition: background 0.2s;
+      flex-shrink: 0;
+    }
+    .toggle.on { background: var(--accent); }
+    .toggle::after {
+      content: '';
+      position: absolute;
+      width: 14px; height: 14px;
+      background: white;
+      border-radius: 50%;
+      top: 3px; left: 3px;
+      transition: left 0.2s;
+    }
+    .toggle.on::after { left: 19px; }
+
+    /* ── ARCHITECT VIEW ──────────────────────────── */
+    .arch-hero {
+      background: linear-gradient(135deg, #1a0f3a 0%, #0f1a3a 100%);
+      border: 1px solid #4a3080;
+      border-radius: var(--radius);
+      padding: 28px;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .arch-hero-left h2 {
+      font-size: 20px;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+
+    .arch-hero-left p {
+      font-size: 13px;
+      color: var(--text-dim);
+      max-width: 480px;
+      line-height: 1.6;
+    }
+
+    .arch-status {
+      text-align: center;
+    }
+
+    .arch-status .last-sync {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 8px;
+    }
+
+    .arch-queue {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+
+    .queue-item {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 14px 20px;
+      border-bottom: 1px solid var(--border);
+    }
+    .queue-item:last-child { border-bottom: none; }
+
+    .queue-num {
+      width: 24px; height: 24px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text-muted);
+      flex-shrink: 0;
+    }
+
+    .queue-title { font-size: 13.5px; font-weight: 600; }
+    .queue-source { font-size: 11.5px; color: var(--text-muted); margin-top: 2px; }
+
+    .queue-actions { margin-left: auto; display: flex; gap: 8px; }
+
+    /* ── PINS VIEW ───────────────────────────────── */
+    .pin-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 14px;
+    }
+
+    .pin-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 18px 20px;
+      cursor: pointer;
+      transition: border-color 0.15s;
+    }
+    .pin-card:hover { border-color: #4a5280; }
+
+    .pin-card-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+
+    .pin-label {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 3px 8px;
+      border-radius: 20px;
+    }
+
+    .pin-label.active { background: var(--green-soft); color: var(--green); }
+    .pin-label.paused { background: var(--amber-soft); color: var(--amber); }
+    .pin-label.resolved { background: #1a2a1a; color: var(--text-muted); }
+
+    .pin-date { font-size: 11px; color: var(--text-muted); }
+
+    .pin-title { font-size: 14px; font-weight: 700; margin-bottom: 6px; }
+    .pin-summary { font-size: 12.5px; color: var(--text-dim); line-height: 1.5; }
+    .pin-agent { font-size: 11px; color: var(--text-muted); margin-top: 10px; }
+
+    /* ── SCROLLBAR ───────────────────────────────── */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+    /* ── SEND CONFIRMATION ───────────────────────── */
+    .toast {
+      position: fixed;
+      bottom: 28px;
+      right: 28px;
+      background: var(--green-soft);
+      border: 1px solid var(--green);
+      color: var(--green);
+      padding: 12px 20px;
+      border-radius: var(--radius);
+      font-size: 13px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      opacity: 0;
+      transform: translateY(10px);
+      transition: all 0.3s;
+      pointer-events: none;
+      z-index: 1000;
+    }
+    .toast.show { opacity: 1; transform: translateY(0); }
+  </style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="wordmark">Spindletap</div>
+    <div class="app-name">Executive Console</div>
+    <div class="brain-pill">
+      <span class="dot"></span>
+      Brain Live
+    </div>
+  </div>
+
+  <nav class="nav">
+    <div class="nav-section-label">Overview</div>
+    <div class="nav-item active" onclick="switchView('dashboard', this)">
+      <span>📊</span> Dashboard
+    </div>
+
+    <div class="nav-section-label" style="margin-top:8px;">Submit</div>
+    <div class="nav-item" onclick="switchView('submit', this)">
+      <span>➕</span> New Update
+    </div>
+
+    <div class="nav-section-label" style="margin-top:8px;">Brain</div>
+    <div class="nav-item" onclick="switchView('pins', this)">
+      <span>📌</span> Active PINs
+      <span class="badge">4</span>
+    </div>
+    <div class="nav-item" onclick="switchView('workstreams', this)">
+      <span>🔀</span> Workstreams
+    </div>
+
+    <div class="nav-section-label" style="margin-top:8px;">Architect</div>
+    <div class="nav-item" onclick="switchView('architect', this)">
+      <span>🏗️</span> Architect Queue
+      <span class="badge">2</span>
+    </div>
+  </nav>
+
+  <div class="sidebar-footer">
+    <div class="sync-line">
+      <span style="color:var(--green);">●</span>
+      Brain synced
+    </div>
+    <div>Last refresh: 9 min ago</div>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<div class="main">
+
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div>
+      <h1 id="view-title">Dashboard</h1>
+      <div class="sub" id="view-sub">Wednesday, May 27, 2026 · Garrison Mathis</div>
+    </div>
+    <div class="topbar-actions">
+      <button class="btn btn-ghost" onclick="showToast('Brain refreshed ✓')">🔄 Refresh Brain</button>
+      <button class="btn btn-architect" onclick="switchView('architect', document.querySelector(\`[onclick*=\\'architect\\']\`))">🏗️ Trigger Architect</button>
+    </div>
+  </div>
+
+  <!-- CONTENT -->
+  <div class="content">
+
+    <!-- ══ DASHBOARD ══ -->
+    <div class="view active" id="view-dashboard">
+
+      <div class="stat-grid">
+        <div class="stat-card">
+          <div class="label">Active PINs</div>
+          <div class="value">4</div>
+          <div class="delta amber">2 awaiting Architect</div>
+        </div>
+        <div class="stat-card">
+          <div class="label">Active Workstreams</div>
+          <div class="value">6</div>
+          <div class="delta green">1 completed this week</div>
+        </div>
+        <div class="stat-card">
+          <div class="label">Last Architect Sync</div>
+          <div class="value" style="font-size:18px;margin-top:4px;">3 days ago</div>
+          <div class="delta amber">Drift possible</div>
+        </div>
+        <div class="stat-card">
+          <div class="label">Pending Submissions</div>
+          <div class="value">2</div>
+          <div class="delta">Not yet sent to Architect</div>
+        </div>
+      </div>
+
+      <div class="row-2">
+
+        <!-- Workstreams -->
+        <div class="card">
+          <div class="card-header">
+            <h2>Active Workstreams</h2>
+            <button class="btn btn-ghost" style="padding:5px 12px;font-size:12px;" onclick="switchView('workstreams', null)">View all</button>
+          </div>
+          <div class="card-body" style="padding:0 20px;">
+            <div class="ws-item">
+              <div class="ws-status active"></div>
+              <div>
+                <div class="ws-title">Master Calendar — Vercel App</div>
+                <div class="ws-meta">Code · Shipped to production</div>
+              </div>
+              <div class="ws-badge active">Active</div>
+            </div>
+            <div class="ws-item">
+              <div class="ws-status active"></div>
+              <div>
+                <div class="ws-title">Executive Console Build</div>
+                <div class="ws-meta">Code · In design / mockup phase</div>
+              </div>
+              <div class="ws-badge active">Active</div>
+            </div>
+            <div class="ws-item">
+              <div class="ws-status paused"></div>
+              <div>
+                <div class="ws-title">Clover Phase 2</div>
+                <div class="ws-meta">Code · Paused — sandbox setup</div>
+              </div>
+              <div class="ws-badge paused">Paused</div>
+            </div>
+            <div class="ws-item">
+              <div class="ws-status active"></div>
+              <div>
+                <div class="ws-title">Weekly Pulse v6.3</div>
+                <div class="ws-meta">Consumer Pipeline · Google Apps Script</div>
+              </div>
+              <div class="ws-badge active">Active</div>
+            </div>
+            <div class="ws-item">
+              <div class="ws-status paused"></div>
+              <div>
+                <div class="ws-title">Integration Priority Roadmap</div>
+                <div class="ws-meta">Architect · Ranked; pending review</div>
+              </div>
+              <div class="ws-badge paused">Paused</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Activity Feed -->
+        <div class="card">
+          <div class="card-header">
+            <h2>Recent Activity</h2>
+          </div>
+          <div class="card-body" style="padding: 8px 20px;">
+            <div class="feed-item">
+              <div class="feed-icon sync">✅</div>
+              <div>
+                <div class="feed-text"><strong>Master Calendar live on Vercel</strong> — historical load complete, 1,052 rows seeded.</div>
+                <div class="feed-time">Today · 9:14 AM</div>
+              </div>
+            </div>
+            <div class="feed-item">
+              <div class="feed-icon pin">📌</div>
+              <div>
+                <div class="feed-text"><strong>PIN created</strong> — Clover Phase 2 paused mid-step 2026-05-12.</div>
+                <div class="feed-time">May 22 · Code</div>
+              </div>
+            </div>
+            <div class="feed-item">
+              <div class="feed-icon decision">🏗️</div>
+              <div>
+                <div class="feed-text"><strong>Architect last synced</strong> — Integration priority map ranked and stored.</div>
+                <div class="feed-time">May 19 · Architect</div>
+              </div>
+            </div>
+            <div class="feed-item">
+              <div class="feed-icon pin">📌</div>
+              <div>
+                <div class="feed-text"><strong>ADR-004 locked</strong> — Personal Brain deferred; Claude Code as platform.</div>
+                <div class="feed-time">May 18 · Architect</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ══ SUBMIT ══ -->
+    <div class="view" id="view-submit">
+      <div class="submit-layout">
+
+        <div class="card">
+          <div class="card-header"><h2>Submit Update to Brain</h2></div>
+          <div class="card-body">
+
+            <div class="form-group">
+              <label>TYPE</label>
+              <div class="type-chips">
+                <div class="type-chip selected" onclick="selectChip(this)">📌 PIN</div>
+                <div class="type-chip" onclick="selectChip(this)">🏛️ Decision</div>
+                <div class="type-chip" onclick="selectChip(this)">🔀 Workstream Update</div>
+                <div class="type-chip" onclick="selectChip(this)">📋 General Note</div>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>TITLE</label>
+              <input type="text" placeholder="Short label — what is this about?"/>
+            </div>
+
+            <div class="form-group">
+              <label>SUMMARY</label>
+              <textarea placeholder="What happened, what's the status, what's blocked or next?"></textarea>
+            </div>
+
+            <div class="form-group">
+              <label>AGENT / WORKSTREAM</label>
+              <select>
+                <option>— Select —</option>
+                <option>Code</option>
+                <option>Architect</option>
+                <option>Advisor</option>
+                <option>Consumer Pipeline</option>
+                <option>General / Cross-agent</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label>NEXT STEP (optional)</label>
+              <input type="text" placeholder="What needs to happen next?"/>
+            </div>
+
+            <div style="display:flex;gap:10px;margin-top:6px;">
+              <button class="btn btn-ghost" style="flex:1;" onclick="showToast('Saved as draft')">Save Draft</button>
+              <button class="btn btn-primary" style="flex:2;" onclick="showToast('Submitted to Brain ✓ — Architect queued')">Submit & Queue for Architect</button>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Right panel -->
+        <div style="display:flex;flex-direction:column;gap:16px;">
+
+          <div class="notify-box">
+            <div class="notify-title">🏗️ Architect Behavior</div>
+            <p>When you submit here, the update is written to the Brain and queued for the Architect. You choose when the Architect actually runs — no surprise sessions, no manual refresh needed.</p>
+          </div>
+
+          <div class="card">
+            <div class="card-header"><h2>Routing Options</h2></div>
+            <div class="card-body" style="padding: 4px 20px;">
+              <div class="toggle-row">
+                <div class="toggle-label">
+                  <strong>Write to Brain now</strong>
+                  Notion DB updated immediately
+                </div>
+                <div class="toggle on" onclick="this.classList.toggle('on')"></div>
+              </div>
+              <div class="toggle-row">
+                <div class="toggle-label">
+                  <strong>Queue for Architect</strong>
+                  Added to next Architect run
+                </div>
+                <div class="toggle on" onclick="this.classList.toggle('on')"></div>
+              </div>
+              <div class="toggle-row">
+                <div class="toggle-label">
+                  <strong>Flag as high priority</strong>
+                  Architect runs it before other items
+                </div>
+                <div class="toggle" onclick="this.classList.toggle('on')"></div>
+              </div>
+              <div class="toggle-row">
+                <div class="toggle-label">
+                  <strong>Notify on completion</strong>
+                  Alert when Architect processes
+                </div>
+                <div class="toggle on" onclick="this.classList.toggle('on')"></div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ PINS ══ -->
+    <div class="view" id="view-pins">
+      <div class="pin-grid">
+
+        <div class="pin-card">
+          <div class="pin-card-top">
+            <span class="pin-label active">Active</span>
+            <span class="pin-date">May 22, 2026</span>
+          </div>
+          <div class="pin-title">Master Calendar Vercel App — Live</div>
+          <div class="pin-summary">App live at stb-master-calendar.vercel.app. Historical load complete (1,052 rows). Gated by Google sign-in. Manage panel shipped.</div>
+          <div class="pin-agent">📎 Code</div>
+        </div>
+
+        <div class="pin-card">
+          <div class="pin-card-top">
+            <span class="pin-label paused">Paused</span>
+            <span class="pin-date">May 12, 2026</span>
+          </div>
+          <div class="pin-title">Clover Phase 2 — Paused Mid-Step</div>
+          <div class="pin-summary">Paused at Test Merchant creation. Sandbox-first path confirmed. Stale load PIN corrected. Resume at step 2 when ready.</div>
+          <div class="pin-agent">📎 Code</div>
+        </div>
+
+        <div class="pin-card">
+          <div class="pin-card-top">
+            <span class="pin-label active">Active</span>
+            <span class="pin-date">May 19, 2026</span>
+          </div>
+          <div class="pin-title">Integration Priority Roadmap — Ranked</div>
+          <div class="pin-summary">Cost/benefit map of STB consumer-pipeline integrations ranked. Recommended sequence set for 2026. Pending Garrison review and green-light.</div>
+          <div class="pin-agent">📎 Architect</div>
+        </div>
+
+        <div class="pin-card">
+          <div class="pin-card-top">
+            <span class="pin-label active">Active</span>
+            <span class="pin-date">May 18, 2026</span>
+          </div>
+          <div class="pin-title">ADR-004 — Personal Brain Locked</div>
+          <div class="pin-summary">Claude Code as platform confirmed. Build deferred. STB tie-in at Phase 3. No further design decisions needed until Phase 3 kickoff.</div>
+          <div class="pin-agent">📎 Architect</div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ══ WORKSTREAMS ══ -->
+    <div class="view" id="view-workstreams">
+      <div class="card">
+        <div class="card-header"><h2>All Workstreams</h2></div>
+        <div class="card-body" style="padding: 0 20px;">
+          <div class="ws-item">
+            <div class="ws-status active"></div>
+            <div style="flex:1">
+              <div class="ws-title">Master Calendar — Vercel App</div>
+              <div class="ws-meta">Code · Shipped · stb-master-calendar.vercel.app</div>
+            </div>
+            <div class="ws-badge active">Active</div>
+          </div>
+          <div class="ws-item">
+            <div class="ws-status active"></div>
+            <div style="flex:1">
+              <div class="ws-title">Executive Console Build</div>
+              <div class="ws-meta">Code · Mockup phase · This session</div>
+            </div>
+            <div class="ws-badge active">Active</div>
+          </div>
+          <div class="ws-item">
+            <div class="ws-status paused"></div>
+            <div style="flex:1">
+              <div class="ws-title">Clover Phase 2</div>
+              <div class="ws-meta">Code · Paused at Test Merchant creation</div>
+            </div>
+            <div class="ws-badge paused">Paused</div>
+          </div>
+          <div class="ws-item">
+            <div class="ws-status active"></div>
+            <div style="flex:1">
+              <div class="ws-title">Weekly Pulse v6.3</div>
+              <div class="ws-meta">Consumer Pipeline · Google Apps Script · Live</div>
+            </div>
+            <div class="ws-badge active">Active</div>
+          </div>
+          <div class="ws-item">
+            <div class="ws-status paused"></div>
+            <div style="flex:1">
+              <div class="ws-title">Integration Priority Roadmap</div>
+              <div class="ws-meta">Architect · Ranked map ready, pending Garrison review</div>
+            </div>
+            <div class="ws-badge paused">Paused</div>
+          </div>
+          <div class="ws-item">
+            <div class="ws-status active"></div>
+            <div style="flex:1">
+              <div class="ws-title">Brain Freshness Contract</div>
+              <div class="ws-meta">Architect · v3.13 · Gate scripts live</div>
+            </div>
+            <div class="ws-badge active">Active</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ ARCHITECT ══ -->
+    <div class="view" id="view-architect">
+
+      <div class="arch-hero">
+        <div class="arch-hero-left">
+          <h2>🏗️ Architect Queue</h2>
+          <p>Items below are queued for the Architect's next run. When you trigger, these are sent in order. You stay in control of when that happens — no surprise sessions, no manual relay needed.</p>
+        </div>
+        <div class="arch-status">
+          <button class="btn btn-architect" style="font-size:15px;padding:12px 28px;" onclick="showToast('Architect triggered — 2 items dispatched ✓')">
+            ▶ Run Architect Now
+          </button>
+          <div class="last-sync">Last run: May 24 · 3 days ago</div>
+        </div>
+      </div>
+
+      <div class="arch-queue">
+        <div class="card-header">
+          <h2>Queued Items (2)</h2>
+          <button class="btn btn-ghost" style="padding:5px 12px;font-size:12px;" onclick="switchView('submit', document.querySelector(\'[onclick*=submit]\'))">+ Add item</button>
+        </div>
+
+        <div class="queue-item">
+          <div class="queue-num">1</div>
+          <div>
+            <div class="queue-title">Integration Priority Roadmap — Garrison review complete</div>
+            <div class="queue-source">Submitted via Console · May 27 · PIN update</div>
+          </div>
+          <div class="queue-actions">
+            <button class="btn btn-ghost" style="padding:5px 10px;font-size:12px;">Edit</button>
+            <button class="btn btn-ghost" style="padding:5px 10px;font-size:12px;color:var(--red);">Remove</button>
+          </div>
+        </div>
+
+        <div class="queue-item">
+          <div class="queue-num">2</div>
+          <div>
+            <div class="queue-title">Executive Console — new workstream added to Brain</div>
+            <div class="queue-source">Auto-generated · May 27 · Workstream update</div>
+          </div>
+          <div class="queue-actions">
+            <button class="btn btn-ghost" style="padding:5px 10px;font-size:12px;">Edit</button>
+            <button class="btn btn-ghost" style="padding:5px 10px;font-size:12px;color:var(--red);">Remove</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+  </div><!-- /content -->
+</div><!-- /main -->
+
+<!-- TOAST -->
+<div class="toast" id="toast">✓ <span id="toast-msg"></span></div>
+
+<script>
+  function switchView(id, el) {
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    document.getElementById('view-' + id).classList.add('active');
+
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    if (el) el.classList.add('active');
+
+    const titles = {
+      dashboard: ['Dashboard', 'Wednesday, May 27, 2026 · Garrison Mathis'],
+      submit: ['New Update', 'Write to Brain + queue for Architect'],
+      pins: ['Active PINs', '4 open · 0 blocked'],
+      workstreams: ['Workstreams', '6 total · 4 active · 2 paused'],
+      architect: ['Architect Queue', '2 items queued · Last run 3 days ago']
+    };
+    document.getElementById('view-title').textContent = titles[id][0];
+    document.getElementById('view-sub').textContent = titles[id][1];
+  }
+
+  function selectChip(el) {
+    el.closest('.type-chips').querySelectorAll('.type-chip').forEach(c => c.classList.remove('selected'));
+    el.classList.add('selected');
+  }
+
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    document.getElementById('toast-msg').textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 3000);
+  }
+</script>
+</body>
+</html>

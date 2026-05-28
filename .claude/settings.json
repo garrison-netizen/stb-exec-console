@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__cecf1aa7-50d3-41f1-802f-5ff717169ea8__notion-fetch",
+      "mcp__cecf1aa7-50d3-41f1-802f-5ff717169ea8__notion-search",
+      "mcp__Claude_Preview__preview_screenshot",
+      "mcp__Claude_Preview__preview_start",
+      "mcp__Claude_Preview__preview_click",
+      "mcp__ccd_session__mark_chapter"
+    ]
+  }
+}

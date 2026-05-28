@@ -1,0 +1,1424 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>STB Executive Console — v2 Inbox Mockup</title>
+  <style>
+    :root {
+      --bg: #0f1117;
+      --surface: #1a1d27;
+      --surface2: #21253a;
+      --surface3: #2a2f47;
+      --border: #2e3250;
+      --border-soft: #232742;
+      --accent: #4f6ef7;
+      --accent-soft: #1e2d6b;
+      --accent-glow: rgba(79, 110, 247, 0.18);
+      --gold: #f59e0b;
+      --gold-soft: #4d3500;
+      --green: #22c55e;
+      --green-soft: #14532d;
+      --red: #ef4444;
+      --red-soft: #3f0f0f;
+      --purple: #a855f7;
+      --purple-soft: #3a1d57;
+      --text: #e2e8f0;
+      --text-muted: #64748b;
+      --text-dim: #94a3b8;
+      --text-bright: #f8fafc;
+      --radius: 12px;
+      --radius-sm: 7px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      font-size: 14px;
+      min-height: 100vh;
+      padding-bottom: 80px; /* room for sticky capture bar */
+    }
+
+    .shell {
+      max-width: 880px;
+      margin: 0 auto;
+      padding: 28px 24px;
+    }
+
+    /* ─── ROCKS STRIP ─── */
+    .rocks-strip {
+      margin-top: 22px;
+      padding: 14px 18px;
+      background: var(--surface);
+      border: 1px solid var(--border-soft);
+      border-radius: var(--radius);
+    }
+    .rocks-head {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+    .rocks-label {
+      font-size: 10.5px;
+      font-weight: 800;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--gold);
+    }
+    .rocks-quarter {
+      font-size: 10.5px;
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+    .rocks-edit {
+      margin-left: auto;
+      font-size: 11px;
+      color: var(--text-muted);
+      cursor: pointer;
+      background: transparent;
+      border: none;
+      font-family: inherit;
+    }
+    .rocks-edit:hover { color: var(--text); }
+    .rocks-grid {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .rock-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      padding: 7px 12px;
+      border-radius: 8px;
+      font-size: 12px;
+      color: var(--text);
+      cursor: pointer;
+      transition: border-color 0.15s;
+    }
+    .rock-chip:hover { border-color: var(--gold); }
+    .rock-chip .rock-emoji { font-size: 14px; }
+    .rock-chip .rock-domain {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      margin-right: 2px;
+    }
+    .rock-chip.empty {
+      opacity: 0.5;
+      border-style: dashed;
+      color: var(--text-muted);
+    }
+
+    /* ─── DOMAIN FILTER ─── */
+    .domain-bar {
+      margin-top: 20px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+      padding: 0 4px;
+    }
+    .domain-label {
+      font-size: 10.5px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      margin-right: 6px;
+    }
+    .domain-chip {
+      padding: 5px 12px;
+      border-radius: 14px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text-dim);
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .domain-chip:hover { color: var(--text); border-color: var(--accent); }
+    .domain-chip.active {
+      background: var(--accent-soft);
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+    .domain-chip .caret { font-size: 9px; opacity: 0.6; }
+    .domain-sublist {
+      width: 100%;
+      margin-top: 8px;
+      padding: 10px 14px;
+      background: var(--surface);
+      border: 1px solid var(--border-soft);
+      border-radius: 8px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      align-items: center;
+    }
+    .domain-sublabel {
+      font-size: 10px;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      margin-right: 6px;
+    }
+    .domain-subchip {
+      padding: 4px 10px;
+      border-radius: 12px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text-dim);
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+    }
+    .domain-subchip:hover { color: var(--text); border-color: var(--accent); }
+    .domain-subchip.add {
+      border-style: dashed;
+      color: var(--text-muted);
+    }
+
+    /* ─── DOMAIN BADGE ON ITEMS ─── */
+    .domain-badge {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      padding: 2px 7px;
+      border-radius: 4px;
+      background: var(--surface3);
+      color: var(--text-dim);
+      border: 1px solid var(--border);
+      margin-right: 6px;
+    }
+    .domain-badge.stb { color: #f59e0b; background: #2a200a; border-color: #4a3920; }
+    .domain-badge.personal { color: #a855f7; background: #2a1a3a; border-color: #4a2e6e; }
+
+    /* ─── HEADER ─── */
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-bottom: 22px;
+      border-bottom: 1px solid var(--border-soft);
+    }
+    .wordmark {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+    }
+    .app-name { font-size: 19px; font-weight: 700; margin-top: 2px; }
+
+    .brain-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--green-soft);
+      border: 1px solid var(--green);
+      color: var(--green);
+      font-size: 11px;
+      font-weight: 600;
+      padding: 5px 11px;
+      border-radius: 20px;
+    }
+    .brain-pill .dot {
+      width: 6px; height: 6px;
+      background: var(--green);
+      border-radius: 50%;
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+
+    /* ─── HERO ─── */
+    .hero {
+      margin-top: 26px;
+      padding: 26px 28px;
+      background: linear-gradient(135deg, #1a1f3a 0%, #15182a 100%);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+    }
+    .hero-left h1 {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--text-bright);
+      letter-spacing: -0.01em;
+    }
+    .hero-left .sub {
+      font-size: 13px;
+      color: var(--text-dim);
+      margin-top: 5px;
+    }
+    .hero-count {
+      display: inline-block;
+      color: var(--gold);
+      margin-left: 8px;
+      font-weight: 800;
+    }
+    .reconcile-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: linear-gradient(135deg, #4f6ef7, #7c3aed);
+      color: white;
+      padding: 13px 22px;
+      border: none;
+      border-radius: var(--radius-sm);
+      font-size: 13.5px;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 4px 18px var(--accent-glow);
+      font-family: inherit;
+      letter-spacing: 0.01em;
+    }
+    .reconcile-btn:hover { opacity: 0.93; }
+    .reconcile-bolt { font-size: 16px; }
+    .reconcile-sub {
+      display: block;
+      font-size: 10.5px;
+      font-weight: 500;
+      opacity: 0.85;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      margin-top: 1px;
+    }
+
+    /* ─── SECTIONS ─── */
+    .section {
+      margin-top: 28px;
+    }
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 0 4px;
+      margin-bottom: 12px;
+    }
+    .section-icon {
+      font-size: 18px;
+    }
+    .section-title {
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-bright);
+    }
+    .section-count {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text-muted);
+      background: var(--surface2);
+      padding: 2px 8px;
+      border-radius: 10px;
+    }
+    .section-chevron {
+      margin-left: auto;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 12px;
+    }
+    .section-divider {
+      flex: 1;
+      height: 1px;
+      background: var(--border-soft);
+      margin-left: 4px;
+    }
+
+    .items {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .item {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px 20px;
+      transition: border-color 0.15s, transform 0.05s;
+    }
+    .item:hover { border-color: var(--border); background: #1c2032; }
+
+    .item.urgent {
+      border-left: 3px solid var(--red);
+    }
+    .item.medium {
+      border-left: 3px solid var(--gold);
+    }
+
+    .item-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-bright);
+      margin-bottom: 4px;
+      line-height: 1.4;
+    }
+    .item-meta {
+      font-size: 11.5px;
+      color: var(--text-muted);
+      display: flex;
+      gap: 6px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .item-meta .sep { opacity: 0.5; }
+    .item-meta .age {
+      color: var(--gold);
+      font-weight: 600;
+    }
+    .item-meta .age.fresh { color: var(--text-muted); font-weight: 400; }
+    .item-meta .age.stale { color: var(--red); }
+
+    .item-actions {
+      display: flex;
+      gap: 6px;
+      margin-top: 14px;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      padding: 6px 13px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1px solid transparent;
+      font-family: inherit;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .btn.primary {
+      background: var(--accent);
+      color: white;
+    }
+    .btn.primary:hover { background: #3e5cda; }
+    .btn.secondary {
+      background: var(--surface3);
+      color: var(--text-dim);
+      border: 1px solid var(--border);
+    }
+    .btn.secondary:hover { color: var(--text); }
+    .btn.ghost {
+      background: transparent;
+      color: var(--text-muted);
+      border: 1px solid transparent;
+    }
+    .btn.ghost:hover {
+      color: var(--text);
+      background: var(--surface3);
+    }
+    .btn.danger {
+      background: transparent;
+      color: var(--text-muted);
+      border: 1px solid transparent;
+    }
+    .btn.danger:hover { color: var(--red); background: var(--red-soft); }
+
+    .btn-arrow {
+      font-size: 10px;
+      opacity: 0.7;
+    }
+
+    /* ─── INFORMATIONAL SECTION ─── */
+    .info-section {
+      margin-top: 32px;
+      padding: 14px 20px;
+      background: var(--surface);
+      border: 1px solid var(--border-soft);
+      border-radius: var(--radius);
+      opacity: 0.75;
+    }
+    .info-section:hover { opacity: 1; }
+    .info-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+    }
+    .info-title {
+      font-size: 11.5px;
+      font-weight: 600;
+      color: var(--text-muted);
+      letter-spacing: 0.04em;
+    }
+    .info-list {
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid var(--border-soft);
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .info-row {
+      font-size: 12px;
+      color: var(--text-dim);
+      display: flex;
+      justify-content: space-between;
+    }
+    .info-row .external {
+      color: var(--text-muted);
+      font-size: 11px;
+    }
+
+    /* ─── FOOTER NAV ─── */
+    .secondary-nav {
+      margin-top: 36px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border-soft);
+      display: flex;
+      justify-content: center;
+      gap: 22px;
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+    .secondary-nav a {
+      color: var(--text-muted);
+      text-decoration: none;
+    }
+    .secondary-nav a:hover { color: var(--text); }
+
+    /* ─── EMPTY STATE ─── */
+    .empty-state {
+      text-align: center;
+      padding: 48px 20px;
+      background: var(--surface);
+      border: 1px dashed var(--border);
+      border-radius: var(--radius);
+      margin-top: 28px;
+    }
+    .empty-icon { font-size: 36px; margin-bottom: 12px; }
+    .empty-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--green);
+      margin-bottom: 4px;
+    }
+    .empty-sub {
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    /* ─── STICKY CAPTURE BAR ─── */
+    .capture-bar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      padding: 14px 24px;
+      box-shadow: 0 -8px 24px rgba(0,0,0,0.3);
+      z-index: 100;
+    }
+    .capture-inner {
+      max-width: 880px;
+      margin: 0 auto;
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+    .capture-icon {
+      font-size: 20px;
+      color: var(--accent);
+    }
+    .capture-input {
+      flex: 1;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 11px 16px;
+      color: var(--text);
+      font-size: 13.5px;
+      font-family: inherit;
+      outline: none;
+    }
+    .capture-input:focus { border-color: var(--accent); }
+    .capture-send {
+      background: var(--accent);
+      color: white;
+      border: none;
+      padding: 11px 18px;
+      border-radius: var(--radius-sm);
+      font-weight: 700;
+      font-size: 12.5px;
+      cursor: pointer;
+      font-family: inherit;
+    }
+    .capture-hint {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-left: 4px;
+    }
+
+    /* Make scroll behavior feel good */
+    html { scroll-behavior: smooth; }
+
+    /* ─── YOUR QUEUE (self-captured) ─── */
+    .your-queue .section-count.yours {
+      background: var(--purple-soft);
+      color: var(--purple);
+    }
+    .your-item {
+      background: linear-gradient(135deg, #1d1830 0%, #1a1d27 60%);
+      border-left: 3px solid var(--purple);
+    }
+    .your-item:hover {
+      background: linear-gradient(135deg, #211a37 0%, #1c2032 60%);
+    }
+
+    .capture-inline {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 12px;
+      padding: 12px 14px;
+      background: var(--surface);
+      border: 1px dashed var(--border);
+      border-radius: var(--radius-sm);
+    }
+    .capture-inline-input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      color: var(--text);
+      font-size: 13.5px;
+      font-family: inherit;
+      outline: none;
+    }
+    .capture-inline-input::placeholder { color: var(--text-muted); font-style: italic; }
+    .capture-inline-send {
+      background: var(--purple-soft);
+      color: var(--purple);
+      border: 1px solid var(--purple);
+      padding: 6px 14px;
+      border-radius: 5px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: inherit;
+    }
+    .capture-inline-send:hover {
+      background: var(--purple);
+      color: white;
+    }
+
+    .route-chips {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      flex-wrap: wrap;
+      margin-right: 6px;
+    }
+    .route-label {
+      font-size: 10.5px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      margin-right: 2px;
+    }
+    .chip-route {
+      background: var(--surface3);
+      color: var(--text-dim);
+      border: 1px solid var(--border);
+      padding: 4px 9px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+    }
+    .chip-route:hover { color: var(--text); border-color: var(--purple); }
+    .chip-route.active {
+      background: var(--purple-soft);
+      color: var(--purple);
+      border-color: var(--purple);
+    }
+
+    /* ─── ITEM TITLE AS CLICKABLE ─── */
+    .item-title-link {
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+    }
+    .item-title-link:hover { color: var(--accent); }
+    .item-title-link::after {
+      content: '⊞';
+      font-size: 13px;
+      color: var(--text-muted);
+      opacity: 0;
+      transition: opacity 0.15s;
+    }
+    .item-title-link:hover::after { opacity: 0.7; }
+
+    /* ─── SUMMARY OVERLAY ─── */
+    .overlay-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(8, 10, 18, 0.6);
+      backdrop-filter: blur(3px);
+      z-index: 200;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+    .overlay-backdrop.open { display: flex; }
+
+    .overlay-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      max-width: 580px;
+      width: 100%;
+      max-height: 80vh;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 24px 64px rgba(0,0,0,0.6);
+      animation: pop 0.12s ease-out;
+    }
+    @keyframes pop {
+      from { transform: scale(0.96); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+
+    .overlay-head {
+      padding: 18px 22px 14px;
+      border-bottom: 1px solid var(--border-soft);
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+    }
+    .overlay-head-left {
+      flex: 1;
+    }
+    .overlay-section-tag {
+      font-size: 10.5px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+    }
+    .overlay-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--text-bright);
+      line-height: 1.35;
+    }
+    .overlay-close {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      font-size: 22px;
+      cursor: pointer;
+      padding: 0 4px;
+      line-height: 1;
+      font-family: inherit;
+    }
+    .overlay-close:hover { color: var(--text); }
+
+    .overlay-body {
+      padding: 18px 22px;
+      overflow-y: auto;
+      flex: 1;
+    }
+
+    .overlay-meta-grid {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 8px 14px;
+      font-size: 12.5px;
+      margin-bottom: 18px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--border-soft);
+    }
+    .overlay-meta-grid dt {
+      color: var(--text-muted);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      font-size: 10.5px;
+      padding-top: 2px;
+    }
+    .overlay-meta-grid dd {
+      color: var(--text);
+    }
+    .overlay-meta-grid dd .age-stale { color: var(--red); font-weight: 600; }
+
+    .overlay-summary {
+      font-size: 13px;
+      line-height: 1.6;
+      color: var(--text-dim);
+      white-space: pre-wrap;
+    }
+    .overlay-summary strong { color: var(--text); }
+
+    .overlay-actions {
+      padding: 14px 22px;
+      border-top: 1px solid var(--border-soft);
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      background: #16192a;
+    }
+
+    .overlay-hint {
+      margin-left: auto;
+      font-size: 11px;
+      color: var(--text-muted);
+      align-self: center;
+    }
+    .overlay-hint kbd {
+      background: var(--surface3);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 1px 6px;
+      font-size: 10.5px;
+      font-family: inherit;
+      color: var(--text-dim);
+    }
+  </style>
+</head>
+<body>
+
+<div class="shell">
+
+  <!-- HEADER -->
+  <header class="header">
+    <div>
+      <div class="wordmark">Spindletap</div>
+      <div class="app-name">Executive Console</div>
+    </div>
+    <div class="brain-pill">
+      <span class="dot"></span>
+      Brain Live · v4.6
+    </div>
+  </header>
+
+  <!-- ROCKS STRIP -->
+  <div class="rocks-strip">
+    <div class="rocks-head">
+      <span style="font-size:14px;">🎯</span>
+      <span class="rocks-label">Q2 Rocks</span>
+      <span class="rocks-quarter">· Apr–Jun 2026</span>
+      <button class="rocks-edit">edit rocks</button>
+    </div>
+    <div class="rocks-grid">
+      <div class="rock-chip">
+        <span class="rock-emoji">🍺</span>
+        <span class="rock-domain">Brewery</span>
+        <span>Hit Q2 distribution target (Houston + Austin)</span>
+      </div>
+      <div class="rock-chip">
+        <span class="rock-emoji">🍵</span>
+        <span class="rock-domain">Coffee</span>
+        <span>Summer menu + seasonal drop</span>
+      </div>
+      <div class="rock-chip">
+        <span class="rock-emoji">🌿</span>
+        <span class="rock-domain">THC</span>
+        <span>5mg singles food-service launch</span>
+      </div>
+      <div class="rock-chip">
+        <span class="rock-emoji">🥋</span>
+        <span class="rock-domain">BJJ</span>
+        <span>Purple belt grading</span>
+      </div>
+      <div class="rock-chip">
+        <span class="rock-emoji">👨‍👩‍👧</span>
+        <span class="rock-domain">Family</span>
+        <span>Aug Big Bend trip planned + booked</span>
+      </div>
+      <div class="rock-chip">
+        <span class="rock-emoji">🗣️</span>
+        <span class="rock-domain">Spanish</span>
+        <span>Daily 20-min minimum, B1 by Sept</span>
+      </div>
+      <div class="rock-chip empty">+ add rock</div>
+    </div>
+  </div>
+
+  <!-- DOMAIN FILTER -->
+  <div class="domain-bar">
+    <span class="domain-label">Focus:</span>
+    <button class="domain-chip active">All domains</button>
+    <button class="domain-chip">🍺 STB <span class="caret">▾</span></button>
+    <button class="domain-chip">🧘 Personal <span class="caret">▾</span></button>
+    <div class="domain-sublist">
+      <span class="domain-sublabel">STB:</span>
+      <button class="domain-subchip">Brewery</button>
+      <button class="domain-subchip">Coffee</button>
+      <button class="domain-subchip">Texzas</button>
+      <button class="domain-subchip">THC</button>
+      <span class="domain-sublabel" style="margin-left:14px;">Personal:</span>
+      <button class="domain-subchip">Family</button>
+      <button class="domain-subchip">Health/Fitness</button>
+      <button class="domain-subchip">Hobbies</button>
+      <button class="domain-subchip">Spiritual</button>
+      <button class="domain-subchip">Language</button>
+      <button class="domain-subchip">Side hustles</button>
+      <button class="domain-subchip add">+ add domain</button>
+    </div>
+  </div>
+
+  <!-- HERO -->
+  <div class="hero">
+    <div class="hero-left">
+      <h1>The Brain needs you for<span class="hero-count">7 items</span></h1>
+      <div class="sub">You have 3 thoughts in your queue · channel has 4 agent-only items · last reconciled 3 days ago</div>
+    </div>
+    <button class="reconcile-btn" title="Acknowledge + sync all agent-only items">
+      <span class="reconcile-bolt">⚡</span>
+      <div>
+        Reconcile Channel
+        <span class="reconcile-sub">clear 4 agent items</span>
+      </div>
+    </button>
+  </div>
+
+  <!-- YOUR CAPTURED THOUGHTS -->
+  <div class="section your-queue">
+    <div class="section-header">
+      <span class="section-icon">💭</span>
+      <span class="section-title">Your captured thoughts</span>
+      <span class="section-count yours">3</span>
+      <div class="section-divider"></div>
+      <span class="section-chevron">▼</span>
+    </div>
+
+    <div class="capture-inline">
+      <input type="text" class="capture-inline-input" placeholder="Pin a thought for later — type and hit enter…" />
+      <button class="capture-inline-send">+ Pin</button>
+    </div>
+
+    <div class="items">
+
+      <div class="item your-item">
+        <div class="item-title"><span class="item-title-link" data-summary="capture-pulse-thread">Ask Advisor whether Pulse should pull from Master Calendar entries directly or via Brain mirror</span></div>
+        <div class="item-meta">
+          <span class="domain-badge stb">STB · Brewery</span>
+          <span>captured 2h ago</span>
+          <span class="sep">·</span>
+          <span>tagged for: Advisor</span>
+        </div>
+        <div class="item-actions">
+          <div class="route-chips">
+            <span class="route-label">Route to:</span>
+            <button class="chip-route">Architect</button>
+            <button class="chip-route active">Advisor</button>
+            <button class="chip-route">Code</button>
+            <button class="chip-route">Personal Brain</button>
+            <button class="chip-route">Obsidian</button>
+          </div>
+          <button class="btn ghost">Open when I'm with them</button>
+          <button class="btn danger">Dismiss</button>
+        </div>
+      </div>
+
+      <div class="item your-item">
+        <div class="item-title"><span class="item-title-link" data-summary="capture-thc-promo">THC distro idea — bundle the new 5mg singles into the food-service deck for Q3, maybe lead with the Houston accounts that already pour our beer</span></div>
+        <div class="item-meta">
+          <span class="domain-badge stb">STB · THC</span>
+          <span>captured yesterday</span>
+          <span class="sep">·</span>
+          <span class="age">unrouted — sitting until you decide</span>
+        </div>
+        <div class="item-actions">
+          <div class="route-chips">
+            <span class="route-label">Route to:</span>
+            <button class="chip-route">Architect</button>
+            <button class="chip-route">Advisor</button>
+            <button class="chip-route">Code</button>
+            <button class="chip-route">Personal Brain</button>
+            <button class="chip-route">Obsidian</button>
+          </div>
+          <button class="btn ghost">Open when I'm with them</button>
+          <button class="btn danger">Dismiss</button>
+        </div>
+      </div>
+
+      <div class="item your-item">
+        <div class="item-title"><span class="item-title-link" data-summary="capture-personal-rock">Personal rock: write Marin's mid-year review notes before next L10</span></div>
+        <div class="item-meta">
+          <span class="domain-badge stb">STB · Brewery</span>
+          <span>captured 3 days ago</span>
+          <span class="sep">·</span>
+          <span>tagged for: Personal Brain</span>
+        </div>
+        <div class="item-actions">
+          <div class="route-chips">
+            <span class="route-label">Route to:</span>
+            <button class="chip-route">Architect</button>
+            <button class="chip-route">Advisor</button>
+            <button class="chip-route">Code</button>
+            <button class="chip-route active">Personal Brain</button>
+            <button class="chip-route">Obsidian</button>
+          </div>
+          <button class="btn ghost">Open when I'm with them</button>
+          <button class="btn danger">Dismiss</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- SOURCE NARRATIVES -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-icon">📖</span>
+      <span class="section-title">Source narratives needed</span>
+      <span class="section-count">3</span>
+      <div class="section-divider"></div>
+      <span class="section-chevron">▼</span>
+    </div>
+    <div class="items">
+
+      <div class="item">
+        <div class="item-title"><span class="item-title-link" data-summary="carlos-cortez">Carlos Cortez hire from Silver Eagle (2019-11-11)</span></div>
+        <div class="item-meta">
+          <span class="domain-badge stb">STB · Brewery</span>
+          <span>Architect needs your first-person account</span>
+          <span class="sep">·</span>
+          <span>destination: Living Archive</span>
+          <span class="sep">·</span>
+          <span class="age stale">held 8 days</span>
+        </div>
+        <div class="item-actions">
+          <button class="btn primary">Tell the story</button>
+          <button class="btn secondary">Defer 7d</button>
+          <button class="btn danger">Drop</button>
+          <button class="btn ghost">Open in Notion <span class="btn-arrow">↗</span></button>
+        </div>
+      </div>
+
+      <div class="item">
+        <div class="item-title"><span class="item-title-link" data-summary="lone-star">Lone Star Beverage Brands 3-market wholesale relationship</span></div>
+        <div class="item-meta">
+          <span>Architect needs your first-person account</span>
+          <span class="sep">·</span>
+          <span>destination: Living Archive</span>
+          <span class="sep">·</span>
+          <span class="age stale">held 8 days</span>
+        </div>
+        <div class="item-actions">
+          <button class="btn primary">Tell the story</button>
+          <button class="btn secondary">Defer 7d</button>
+          <button class="btn danger">Drop</button>
+          <button class="btn ghost">Open in Notion <span class="btn-arrow">↗</span></button>
+        </div>
+      </div>
+
+      <div class="item">
+        <div class="item-title"><span class="item-title-link" data-summary="solstice">Solstice / Johnnyo / Gorrity contractor file enrichment</span></div>
+        <div class="item-meta">
+          <span>Architect needs your first-person account</span>
+          <span class="sep">·</span>
+          <span>destination: Living Archive</span>
+          <span class="sep">·</span>
+          <span class="age">held 5 days</span>
+        </div>
+        <div class="item-actions">
+          <button class="btn primary">Tell the story</button>
+          <button class="btn secondary">Defer 7d</button>
+          <button class="btn danger">Drop</button>
+          <button class="btn ghost">Open in Notion <span class="btn-arrow">↗</span></button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- DECISIONS -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-icon">⚖️</span>
+      <span class="section-title">Decisions pending your call</span>
+      <span class="section-count">3</span>
+      <div class="section-divider"></div>
+      <span class="section-chevron">▼</span>
+    </div>
+    <div class="items">
+
+      <div class="item urgent">
+        <div class="item-title"><span class="item-title-link" data-summary="adr-004">ADR-004 Release Agent — strategic veto gate</span></div>
+        <div class="item-meta">
+          <span class="domain-badge stb">STB · System</span>
+          <span>Architect</span>
+          <span class="sep">·</span>
+          <span>posted 1h ago</span>
+          <span class="sep">·</span>
+          <span>blocks Console v1 build</span>
+        </div>
+        <div class="item-actions">
+          <button class="btn primary">Approve</button>
+          <button class="btn secondary">Modify</button>
+          <button class="btn danger">Reject</button>
+          <button class="btn ghost">Open ADR <span class="btn-arrow">↗</span></button>
+        </div>
+      </div>
+
+      <div class="item medium">
+        <div class="item-title"><span class="item-title-link" data-summary="party-pay">Party Pay Brain schema build — Workflow A approval</span></div>
+        <div class="item-meta">
+          <span>Architect</span>
+          <span class="sep">·</span>
+          <span class="age">waiting since May 20</span>
+        </div>
+        <div class="item-actions">
+          <button class="btn primary">Approve</button>
+          <button class="btn secondary">Modify</button>
+          <button class="btn danger">Reject</button>
+          <button class="btn ghost">Open spec <span class="btn-arrow">↗</span></button>
+        </div>
+      </div>
+
+      <div class="item medium">
+        <div class="item-title"><span class="item-title-link" data-summary="tsp2">TSP2 — your step-1-vs-step-2 answer</span></div>
+        <div class="item-meta">
+          <span>Code</span>
+          <span class="sep">·</span>
+          <span>Triple Seat Phase 2 paused at this gate</span>
+          <span class="sep">·</span>
+          <span class="age stale">waiting 15 days</span>
+        </div>
+        <div class="item-actions">
+          <button class="btn primary">Step 1</button>
+          <button class="btn primary">Step 2</button>
+          <button class="btn secondary">Defer 7d</button>
+          <button class="btn ghost">Open PIN <span class="btn-arrow">↗</span></button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- CHANNEL RELAY -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-icon">🔄</span>
+      <span class="section-title">Channel items needing your relay</span>
+      <span class="section-count">1</span>
+      <div class="section-divider"></div>
+      <span class="section-chevron">▼</span>
+    </div>
+    <div class="items">
+
+      <div class="item">
+        <div class="item-title"><span class="item-title-link" data-summary="calendar-topology">Architect → Code: Master Calendar topology — Brain-as-hub vs parallel-feeds</span></div>
+        <div class="item-meta">
+          <span class="domain-badge stb">STB · System</span>
+          <span>Type: Question</span>
+          <span class="sep">·</span>
+          <span class="age stale">Unread 5 days</span>
+          <span class="sep">·</span>
+          <span>Code's draft reply ready in queue</span>
+        </div>
+        <div class="item-actions">
+          <button class="btn primary">⚡ Release Code's reply</button>
+          <button class="btn secondary">Read full thread</button>
+          <button class="btn ghost">Open in Notion <span class="btn-arrow">↗</span></button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- INFORMATIONAL -->
+  <div class="info-section">
+    <div class="info-header">
+      <span class="section-icon" style="font-size:14px;">ℹ️</span>
+      <span class="info-title">Was you, now external — 2 items waiting on providers</span>
+      <span class="section-chevron" style="margin-left:auto;">▼</span>
+    </div>
+    <div class="info-list">
+      <div class="info-row">
+        <span>Triple Seat API key — your request in</span>
+        <span class="external">awaiting provider grant · 6 days</span>
+      </div>
+      <div class="info-row">
+        <span>Mailchimp + Clover access — your requests in</span>
+        <span class="external">awaiting provider grant · 6 days</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECONDARY NAV -->
+  <nav class="secondary-nav">
+    <a href="#">Browse Brain</a>
+    <a href="#">Recent activity</a>
+    <a href="#">Agent status</a>
+    <a href="#">Settings</a>
+  </nav>
+
+</div>
+
+<!-- SUMMARY OVERLAY -->
+<div class="overlay-backdrop" id="overlay" onclick="if(event.target.id==='overlay') closeOverlay()">
+  <div class="overlay-card">
+    <div class="overlay-head">
+      <div class="overlay-head-left">
+        <div class="overlay-section-tag" id="overlay-section">Source narrative needed</div>
+        <div class="overlay-title" id="overlay-title">—</div>
+      </div>
+      <button class="overlay-close" onclick="closeOverlay()" title="Close (Esc)">×</button>
+    </div>
+    <div class="overlay-body">
+      <dl class="overlay-meta-grid" id="overlay-meta"></dl>
+      <div class="overlay-summary" id="overlay-summary"></div>
+    </div>
+    <div class="overlay-actions" id="overlay-actions"></div>
+  </div>
+</div>
+
+<!-- STICKY CAPTURE BAR -->
+<div class="capture-bar">
+  <div class="capture-inner">
+    <span class="capture-icon">💭</span>
+    <input type="text" class="capture-input" placeholder="Quick capture — pins to your queue, route to an agent when ready…" />
+    <button class="capture-send">Pin to Queue</button>
+    <span class="capture-hint">⏎</span>
+  </div>
+</div>
+
+<script>
+  // Summary content — in the real React app this comes from the Brain row body.
+  // For the mockup, hand-written context that mirrors what the Brain actually holds.
+  const SUMMARIES = {
+    'capture-pulse-thread': {
+      section: '💭 Your captured thought',
+      title: 'Ask Advisor whether Pulse should pull from Master Calendar entries directly or via Brain mirror',
+      meta: {
+        'Captured': '2 hours ago',
+        'Routed for': 'Advisor (next session)',
+        'Source': 'You',
+      },
+      summary: `This is in your queue waiting for your next Advisor session. When you open Advisor, this surfaces as part of the session-start context so you don't have to remember to bring it up.\n\nUntil then, it sits here and pings nothing. You can re-route, edit, or dismiss anytime.`,
+      actions: [
+        { label: 'Open when I\'m with Advisor', kind: 'primary' },
+        { label: 'Re-route', kind: 'secondary' },
+        { label: 'Edit thought', kind: 'ghost' },
+        { label: 'Dismiss', kind: 'danger' },
+      ],
+    },
+    'capture-thc-promo': {
+      section: '💭 Your captured thought',
+      title: 'THC distro idea — bundle the 5mg singles into the food-service deck for Q3',
+      meta: {
+        'Captured': 'Yesterday',
+        'Routed for': 'Unrouted — sitting until you decide',
+        'Source': 'You',
+      },
+      summary: `Maybe lead with the Houston accounts that already pour our beer.\n\nThis hasn't been routed to an agent yet. Could go to Advisor (strategic read), Architect (capture as Living Archive idea), or Personal Brain (idea-park until ready). Pick a destination or leave it sitting.`,
+      actions: [
+        { label: 'Route to Advisor', kind: 'primary' },
+        { label: 'Route to Architect', kind: 'secondary' },
+        { label: 'Edit thought', kind: 'ghost' },
+        { label: 'Dismiss', kind: 'danger' },
+      ],
+    },
+    'capture-personal-rock': {
+      section: '💭 Your captured thought',
+      title: 'Personal rock: write Marin\'s mid-year review notes before next L10',
+      meta: {
+        'Captured': '3 days ago',
+        'Routed for': 'Personal Brain',
+        'Source': 'You',
+      },
+      summary: `Marin's mid-year is coming up and the L10 cadence will surface it. Capture review notes now while observations are fresh, so the conversation isn't reconstructed from memory under pressure.\n\nRouted to Personal Brain — your next Personal session will see this as a starting prompt.`,
+      actions: [
+        { label: 'Open in Personal Brain', kind: 'primary' },
+        { label: 'Re-route', kind: 'secondary' },
+        { label: 'Edit thought', kind: 'ghost' },
+        { label: 'Dismiss', kind: 'danger' },
+      ],
+    },
+    'carlos-cortez': {
+      section: '📖 Source narrative needed',
+      title: 'Carlos Cortez hire from Silver Eagle (2019-11-11)',
+      meta: {
+        'Destination': 'Living Archive',
+        'Held by': 'Architect (Doctrine 3 — source-narrative discipline)',
+        'Age': '<span class="age-stale">held 8 days</span>',
+        'Related entity': 'Cortez, Carlos (employee file)',
+      },
+      summary: `Architect needs your first-person narrative to canonicalize this entry.\n\nContext from the personnel sheet: Carlos was flagged for a prior Silver Eagle role and a DWI-related departure before his 2019-11-11 hire. The Architect won't synthesize the story from sheet data alone — Doctrine 3 requires your direct account so the Living Archive entry reflects intent and judgment, not just facts.\n\n<strong>What to tell:</strong> who told you what, what you weighed, what you decided, how it's played out.`,
+      actions: [
+        { label: 'Tell the story', kind: 'primary' },
+        { label: 'Defer 7 days', kind: 'secondary' },
+        { label: 'Drop entry', kind: 'danger' },
+        { label: 'Open in Notion ↗', kind: 'ghost' },
+      ],
+    },
+    'lone-star': {
+      section: '📖 Source narrative needed',
+      title: 'Lone Star Beverage Brands 3-market wholesale relationship',
+      meta: {
+        'Destination': 'Living Archive',
+        'Held by': 'Architect (Doctrine 3)',
+        'Age': '<span class="age-stale">held 8 days</span>',
+        'Related entity': 'Lone Star Beverage Brands LLC',
+      },
+      summary: `Sheet context: 3rd-party sales company covering 3 markets. Markets, dates, and relationship details to be provided in a Garrison + Advisor session.\n\nArchitect has the placeholder Living Archive row created and is waiting on your account before he writes the canonical entry.`,
+      actions: [
+        { label: 'Tell the story', kind: 'primary' },
+        { label: 'Defer 7 days', kind: 'secondary' },
+        { label: 'Drop entry', kind: 'danger' },
+        { label: 'Open in Notion ↗', kind: 'ghost' },
+      ],
+    },
+    'solstice': {
+      section: '📖 Source narrative needed',
+      title: 'Solstice / Johnnyo / Gorrity contractor file enrichment',
+      meta: {
+        'Destination': 'Living Archive (contractor files)',
+        'Held by': 'Architect (Doctrine 3)',
+        'Age': '<span class="age-stale">held 5 days</span>',
+        'Related entities': '3 contractor files (incl. Anthony Gorrity tombstone)',
+      },
+      summary: `Three contractor files await Q&A enrichment. The Architect has the rows queued; needs your context on each relationship — origin, scope, ongoing posture.\n\nNote: the Anthony Gorrity individual entry was tombstoned for being miscategorized; recapture under the Johnnyo Design contractor entity.`,
+      actions: [
+        { label: 'Tell the story', kind: 'primary' },
+        { label: 'Defer 7 days', kind: 'secondary' },
+        { label: 'Drop entry', kind: 'danger' },
+        { label: 'Open in Notion ↗', kind: 'ghost' },
+      ],
+    },
+    'adr-004': {
+      section: '⚖️ Decision pending your call',
+      title: 'ADR-004 Release Agent — strategic veto gate',
+      meta: {
+        'Author': 'Architect',
+        'Posted': '1 hour ago',
+        'Blocks': 'Executive Console v1 build (Tier 2 path)',
+        'Gate type': 'Decision-Load Contract item #2 (touches outside world)',
+      },
+      summary: `<strong>What's being decided:</strong> the Release Agent — a scoped API agent that reads Console-staged rows from Intake Queue and reconciles them to their canonical destinations (Living Archive, Executive Perspective, etc).\n\n<strong>Why it needs your veto:</strong> introduces a fourth Brain writer (alongside Architect, Advisor, Code). Same doctrinal shape as ADR-003 for Code — needs your explicit go before any build.\n\n<strong>The Architect's recommendation:</strong> Approve. Scope is narrow (transcription, not synthesis), failure mode is bounded (rows bounce back if reconciliation fails), and it unblocks the Console v1 you actually want.\n\nIf approved, Architect drafts the canonical Release Agent prompt + scope spec next.`,
+      actions: [
+        { label: '✓ Approve', kind: 'primary' },
+        { label: 'Modify before approving', kind: 'secondary' },
+        { label: '✕ Reject', kind: 'danger' },
+        { label: 'Open ADR in Notion ↗', kind: 'ghost' },
+      ],
+    },
+    'party-pay': {
+      section: '⚖️ Decision pending your call',
+      title: 'Party Pay Brain schema build — Workflow A approval',
+      meta: {
+        'Author': 'Architect',
+        'Waiting since': 'May 20, 2026',
+        'Scope': 'Event Payments + Paysafe Payouts + Bookings field',
+      },
+      summary: `Workflow A database creation requires explicit Garrison approval before build. Architect has the spec staged; this row holds it pending your call.\n\nNote: real gate is Triple Seat + Paysafe API access (same external blocker as TSP2), not your build-approval — but the spec still needs your blessing before any Brain mutation happens.`,
+      actions: [
+        { label: '✓ Approve', kind: 'primary' },
+        { label: 'Modify before approving', kind: 'secondary' },
+        { label: '✕ Reject', kind: 'danger' },
+        { label: 'Open spec in Notion ↗', kind: 'ghost' },
+      ],
+    },
+    'tsp2': {
+      section: '⚖️ Decision pending your call',
+      title: 'TSP2 — step 1 vs step 2 answer',
+      meta: {
+        'Author': 'Code',
+        'Posted': 'May 12, 2026',
+        'Age': '<span class="age-stale">waiting 15 days</span>',
+        'Blocks': 'Triple Seat Phase 2 pipeline build',
+      },
+      summary: `TSP2 paused at the change-plan approval gate awaiting your answer: <strong>step 1 (sandbox-first path)</strong> or <strong>step 2 (proceed direct)</strong>?\n\nCode's read: step 1 is safer (test merchant creation first) but slower. Step 2 is faster but commits you to the live integration earlier.\n\nNo external blockers — purely your call on appetite for risk vs speed.`,
+      actions: [
+        { label: 'Step 1 (sandbox)', kind: 'primary' },
+        { label: 'Step 2 (direct)', kind: 'primary' },
+        { label: 'Defer 7 days', kind: 'secondary' },
+        { label: 'Open PIN in Notion ↗', kind: 'ghost' },
+      ],
+    },
+    'calendar-topology': {
+      section: '🔄 Channel item needing your relay',
+      title: 'Architect → Code: Master Calendar topology — Brain-as-hub vs parallel-feeds',
+      meta: {
+        'Type': 'Question',
+        'Status': '<span class="age-stale">Unread 5 days</span>',
+        'Code\'s draft': 'Ready in queue — Brain-as-hub',
+      },
+      summary: `<strong>Architect asks:</strong> as future pipelines come online (Mailchimp, Clover, etc.), should each pipeline write directly to the Master Calendar in parallel — or should they all write to the Brain, with the Brain as the single hub that feeds the calendar?\n\n<strong>Code's draft reply (ready to release):</strong> Brain-as-hub is right. Each pipeline becomes a self-contained job that writes to Brain canonical; calendar derivation lives in one place. Parallel-feeds would bolt calendar-writing onto every pipeline — drift risk, N maintenance points.\n\nOne click releases Code's reply to Architect and clears this from your inbox.`,
+      actions: [
+        { label: '⚡ Release Code\'s reply', kind: 'primary' },
+        { label: 'Edit before releasing', kind: 'secondary' },
+        { label: 'Read full thread', kind: 'ghost' },
+        { label: 'Open in Notion ↗', kind: 'ghost' },
+      ],
+    },
+  };
+
+  function openOverlay(id) {
+    const s = SUMMARIES[id];
+    if (!s) return;
+    document.getElementById('overlay-section').textContent = s.section;
+    document.getElementById('overlay-title').textContent = s.title;
+    const meta = document.getElementById('overlay-meta');
+    meta.innerHTML = '';
+    for (const [k, v] of Object.entries(s.meta)) {
+      const dt = document.createElement('dt');
+      dt.textContent = k;
+      const dd = document.createElement('dd');
+      dd.innerHTML = v;
+      meta.append(dt, dd);
+    }
+    document.getElementById('overlay-summary').innerHTML = s.summary;
+    const act = document.getElementById('overlay-actions');
+    act.innerHTML = '';
+    for (const a of s.actions) {
+      const btn = document.createElement('button');
+      btn.className = `btn ${a.kind}`;
+      btn.textContent = a.label;
+      act.append(btn);
+    }
+    const hint = document.createElement('div');
+    hint.className = 'overlay-hint';
+    hint.innerHTML = '<kbd>Esc</kbd> to close';
+    act.append(hint);
+    document.getElementById('overlay').classList.add('open');
+  }
+
+  function closeOverlay() {
+    document.getElementById('overlay').classList.remove('open');
+  }
+
+  document.addEventListener('click', (e) => {
+    const link = e.target.closest('.item-title-link');
+    if (link) openOverlay(link.dataset.summary);
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeOverlay();
+  });
+</script>
+
+</body>
+</html>
