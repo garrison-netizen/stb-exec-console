@@ -130,6 +130,14 @@ export default function App() {
   // Active Tasks — UB Tasks where Status != Done and no '🤖 Operator draft' label.
   const [activeTasks, setActiveTasks] = useState({ items: [], loading: true, error: null });
 
+  // Held for Garrison — Capture Inbox rows the Classifier punted; Garrison
+  // reclassifies (Task/Note/Project) or drops them via Console.
+  const [heldCaptures, setHeldCaptures] = useState({ items: [], loading: true, error: null });
+
+  // Draft Tasks — UB Tasks the Promoter created with the '🤖 Operator draft'
+  // label, awaiting Garrison's review. Release removes the label.
+  const [draftTasks, setDraftTasks] = useState({ items: [], loading: true, error: null });
+
   // Load channel items where Code is the recipient + status Unread (matches
   // the doctrinal narrow filter shipped earlier today).
   useEffect(() => {
@@ -137,6 +145,8 @@ export default function App() {
     reloadFreshness();
     reloadSourceNarratives();
     reloadActiveTasks();
+    reloadHeldCaptures();
+    reloadDraftTasks();
   }, []);
 
   function reloadReconcileTargets() {
@@ -191,6 +201,84 @@ export default function App() {
         setActiveTasks({ items: d.items || [], loading: false, error: null });
       })
       .catch((err) => setActiveTasks({ items: [], loading: false, error: err.message }));
+  }
+
+  function reloadHeldCaptures() {
+    setHeldCaptures((s) => ({ ...s, loading: true, error: null }));
+    fetch('/api/list?kind=held_for_garrison&limit=25')
+      .then((r) => r.json())
+      .then((d) => {
+        if (!d.ok) throw new Error(d.error || 'fetch failed');
+        setHeldCaptures({ items: d.items || [], loading: false, error: null });
+      })
+      .catch((err) => setHeldCaptures({ items: [], loading: false, error: err.message }));
+  }
+
+  // Reclassify a Held capture → Pending promotion. Promoter picks up next pass.
+  async function reclassifyHeld(item, captureType) {
+    try {
+      const res = await fetch('/api/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          submissionType: 'reclassify_held_capture',
+          pageId: item.id,
+          captureType,
+        }),
+      });
+      const j = await res.json();
+      if (!j.ok) throw new Error(j.error || 'reclassify failed');
+      reloadHeldCaptures();
+    } catch (err) {
+      alert(`Reclassify failed: ${err.message}`);
+    }
+  }
+
+  function reloadDraftTasks() {
+    setDraftTasks((s) => ({ ...s, loading: true, error: null }));
+    fetch('/api/list?kind=draft_tasks&limit=25')
+      .then((r) => r.json())
+      .then((d) => {
+        if (!d.ok) throw new Error(d.error || 'fetch failed');
+        setDraftTasks({ items: d.items || [], loading: false, error: null });
+      })
+      .catch((err) => setDraftTasks({ items: [], loading: false, error: err.message }));
+  }
+
+  async function releaseDraft(item) {
+    try {
+      const res = await fetch('/api/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ submissionType: 'release_draft_task', pageId: item.id }),
+      });
+      const j = await res.json();
+      if (!j.ok) throw new Error(j.error || 'release failed');
+      reloadDraftTasks();
+      reloadActiveTasks(); // released task moves into active list
+    } catch (err) {
+      alert(`Release failed: ${err.message}`);
+    }
+  }
+
+  // Drop a Held capture → Bounced with Garrison-attributed reason.
+  async function discardHeld(item) {
+    if (!confirm(`Drop this capture? It will not be promoted.\n\n"${(item.body || item.title || '').slice(0, 120)}"`)) return;
+    try {
+      const res = await fetch('/api/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          submissionType: 'discard_held_capture',
+          pageId: item.id,
+        }),
+      });
+      const j = await res.json();
+      if (!j.ok) throw new Error(j.error || 'discard failed');
+      reloadHeldCaptures();
+    } catch (err) {
+      alert(`Drop failed: ${err.message}`);
+    }
   }
 
   // ─── Source Narrative actions ────────────────────────────────
@@ -524,6 +612,69 @@ export default function App() {
           lastReconciled="3d ago"
         />
 
+        {(heldCaptures.items.length > 0 || heldCaptures.loading || heldCaptures.error) && (
+          <Section icon="✋" title="Held for your call" count={heldCaptures.items.length} countTone="urgent">
+            {heldCaptures.loading && <div className="loading">Loading from Capture Inbox…</div>}
+            {heldCaptures.error && <div className="error">⚠ {heldCaptures.error}</div>}
+            {!heldCaptures.loading && !heldCaptures.error && heldCaptures.items.length === 0 && (
+              <div className="empty">Nothing held — Classifier handled everything cleanly.</div>
+            )}
+            {!heldCaptures.loading && !heldCaptures.error && heldCaptures.items.map((c) => {
+              const preview = (c.title || c.body || '(no content)').slice(0, 200);
+              return (
+                <Item
+                  key={c.id}
+                  extraClass={c.captureDomain ? `dom-${c.captureDomain.toLowerCase().replace(/\s+/g, '-')}` : ''}
+                  title={preview}
+                  summaryId={c.id}
+                  onOpenSummary={() => window.open(c.url, '_blank', 'noopener,noreferrer')}
+                  meta={
+                    <>
+                      {c.captureDomain && <span className="domain-badge stb">{c.captureDomain}</span>}
+                      <span className="pill ghost">by {c.capturedBy || '?'}</span>
+                      {c.dateCaptured && (
+                        <>
+                          <span className="sep">·</span>
+                          <span>captured {c.dateCaptured.slice(0, 10)}</span>
+                        </>
+                      )}
+                      {c.bounceReason && (
+                        <>
+                          <span className="sep">·</span>
+                          <span className="age stale">{c.bounceReason}</span>
+                        </>
+                      )}
+                    </>
+                  }
+                  actions={
+                    <>
+                      <button type="button" className="btn primary" onClick={() => reclassifyHeld(c, 'Task')}>
+                        Task
+                      </button>
+                      <button type="button" className="btn secondary" onClick={() => reclassifyHeld(c, 'Note')}>
+                        Note
+                      </button>
+                      <button type="button" className="btn secondary" onClick={() => reclassifyHeld(c, 'Project')}>
+                        Project
+                      </button>
+                      <button type="button" className="btn danger" onClick={() => discardHeld(c)}>
+                        Drop
+                      </button>
+                      <button
+                        type="button"
+                        className="btn ghost"
+                        onClick={() => window.open(c.url, '_blank', 'noopener,noreferrer')}
+                      >
+                        Open <span className="btn-arrow">↗</span>
+                      </button>
+                    </>
+                  }
+                />
+              );
+            })}
+          </Section>
+        )}
+
         <Section icon="✅" title="Your active tasks" count={activeTasks.items.length}>
           {activeTasks.loading && <div className="loading">Loading from UB Tasks…</div>}
           {activeTasks.error && <div className="error">⚠ {activeTasks.error}</div>}
@@ -603,6 +754,50 @@ export default function App() {
             );
           })}
         </Section>
+
+        {(draftTasks.items.length > 0 || draftTasks.error) && (
+          <Section icon="🤖" title="Operator drafts awaiting release" count={draftTasks.items.length} countTone="gold">
+            {draftTasks.error && <div className="error">⚠ {draftTasks.error}</div>}
+            {!draftTasks.error && draftTasks.items.map((t) => (
+              <Item
+                key={t.id}
+                extraClass={t.domainLabel ? `dom-${(t.domainLabel || '').toLowerCase().replace(/\s+/g, '-')}` : ''}
+                title={t.name}
+                summaryId={t.id}
+                onOpenSummary={() => window.open(t.url, '_blank', 'noopener,noreferrer')}
+                meta={
+                  <>
+                    {t.domainLabel && <span className="domain-badge stb">{t.domainLabel}</span>}
+                    <span className="pill ghost">🤖 draft</span>
+                    {t.priority && (
+                      <span className={`pill priority-${t.priority.toLowerCase()}`}>{t.priority}</span>
+                    )}
+                    {t.due && (
+                      <>
+                        <span className="sep">·</span>
+                        <span>due {t.due}</span>
+                      </>
+                    )}
+                  </>
+                }
+                actions={
+                  <>
+                    <button type="button" className="btn primary" onClick={() => releaseDraft(t)}>
+                      Release
+                    </button>
+                    <button
+                      type="button"
+                      className="btn ghost"
+                      onClick={() => window.open(t.url, '_blank', 'noopener,noreferrer')}
+                    >
+                      Open <span className="btn-arrow">↗</span>
+                    </button>
+                  </>
+                }
+              />
+            ))}
+          </Section>
+        )}
 
         <YourQueueSection
           items={queue}
