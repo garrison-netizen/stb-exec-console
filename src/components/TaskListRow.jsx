@@ -3,9 +3,12 @@
 // · inline metadata (domain badge, priority, due, project marker) ·
 // optional primary action (e.g. Release for drafts) · open arrow.
 //
-// variant: 'active' (default) renders status dot + open-only.
-//          'draft'  renders 🤖 marker + Release primary action.
-export default function TaskListRow({ task, variant = 'active', onRelease }) {
+// variant: 'active'  renders status dot + open-only.
+//          'project' renders a Done checkbox (writes Status=Done straight to
+//                    UB Tasks per ADR-005 §2) + open. Used inside Projects
+//                    section rows.
+//          'draft'   renders 🤖 marker + Release primary action.
+export default function TaskListRow({ task, variant = 'active', onRelease, onMarkDone }) {
   const today = new Date().toISOString().slice(0, 10);
   const isOverdue = task.due && task.due < today;
   const isToday = task.due === today;
@@ -20,9 +23,31 @@ export default function TaskListRow({ task, variant = 'active', onRelease }) {
     window.open(task.url, '_blank', 'noopener,noreferrer');
   }
 
+  function handleDoneClick(e) {
+    e.stopPropagation();
+    e.preventDefault();
+    onMarkDone?.(task);
+  }
+
+  // Project variant: the status dot is an interactive checkbox that marks
+  // the Task Done in UB on click.
+  const dotEl = variant === 'project' && onMarkDone ? (
+    <button
+      type="button"
+      className="task-row-done-btn"
+      onClick={handleDoneClick}
+      title="Mark Done (writes Status=Done in UB)"
+      aria-label="Mark task done"
+    >
+      <span className="task-row-dot">{statusIcon}</span>
+    </button>
+  ) : (
+    <span className={`task-row-dot ${task.status === 'Doing' ? 'doing' : ''}`}>{statusIcon}</span>
+  );
+
   return (
     <div className={`task-row task-row-${variant}`}>
-      <span className={`task-row-dot ${task.status === 'Doing' ? 'doing' : ''}`}>{statusIcon}</span>
+      {dotEl}
       <a
         href={task.url}
         target="_blank"

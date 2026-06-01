@@ -484,6 +484,123 @@ html { scroll-behavior: smooth; }
   border-left: 2px solid var(--gold, #f3c14e);
 }
 
+/* Done button (project variant) — replaces the static dot with a clickable
+   circle. Becomes a checkmark target on hover. */
+.task-row-done-btn {
+  background: transparent;
+  border: none;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+  width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: background 0.12s;
+}
+.task-row-done-btn:hover {
+  background: rgba(74, 222, 128, 0.15);
+}
+.task-row-done-btn:hover .task-row-dot {
+  color: #4ade80;
+}
+.task-row-done-btn:hover .task-row-dot::before {
+  content: '✓';
+  display: inline;
+}
+.task-row-done-btn:hover .task-row-dot {
+  font-size: 0;
+}
+.task-row-done-btn:hover .task-row-dot::before {
+  font-size: 13px;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Projects section (ADR-005 §2 project-shape inbox)
+   ───────────────────────────────────────────────────────────── */
+.projects-section .section-subcount {
+  color: var(--text-faint);
+  font-size: 12px;
+  margin-left: 4px;
+}
+.projects-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.project-card {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  overflow: hidden;
+  transition: border-color 0.12s;
+}
+.project-card:hover {
+  border-color: var(--line-bright);
+}
+.project-card.open {
+  border-color: var(--line-bright);
+}
+.project-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  cursor: pointer;
+  user-select: none;
+}
+.project-chev {
+  flex: 0 0 14px;
+  color: var(--text-faint);
+  font-size: 12px;
+}
+.project-name {
+  flex: 1 1 auto;
+  color: var(--text);
+  font-weight: 600;
+  font-size: 13.5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.project-meta {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--text-faint);
+  font-size: 11.5px;
+}
+.project-due { color: var(--text-dim); }
+.project-due.overdue { color: var(--red); font-weight: 600; }
+.project-task-count {
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-faint);
+}
+.project-open {
+  flex: 0 0 18px;
+  color: var(--text-faint);
+  text-decoration: none;
+  text-align: center;
+  font-size: 13px;
+}
+.project-open:hover { color: var(--text); }
+.project-tasks {
+  padding: 8px 14px 12px 14px;
+  border-top: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.015);
+}
+.project-empty {
+  font-size: 12px;
+  color: var(--text-faint);
+  padding: 4px 0;
+  font-style: italic;
+}
+
 .item {
   background: var(--panel);
   border: 1px solid var(--line);

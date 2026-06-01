@@ -5,6 +5,7 @@ import Section from './components/Section.jsx';
 import Item from './components/Item.jsx';
 import YourQueueSection from './components/YourQueueSection.jsx';
 import TaskListRow from './components/TaskListRow.jsx';
+import ProjectsSection from './components/ProjectsSection.jsx';
 import CaptureBar from './components/CaptureBar.jsx';
 import SummaryOverlay from './components/SummaryOverlay.jsx';
 import {
@@ -139,6 +140,10 @@ export default function App() {
   // label, awaiting Garrison's review. Release removes the label.
   const [draftTasks, setDraftTasks] = useState({ items: [], loading: true, error: null });
 
+  // Project-shape inbox per ADR-005 §2 — projects + their related tasks.
+  const [projects, setProjects] = useState({ items: [], loading: true, error: null });
+  const [projectedTasks, setProjectedTasks] = useState({ items: [], loading: true, error: null });
+
   // Load channel items where Code is the recipient + status Unread (matches
   // the doctrinal narrow filter shipped earlier today).
   useEffect(() => {
@@ -148,6 +153,8 @@ export default function App() {
     reloadActiveTasks();
     reloadHeldCaptures();
     reloadDraftTasks();
+    reloadProjects();
+    reloadProjectedTasks();
   }, []);
 
   function reloadReconcileTargets() {
@@ -244,6 +251,47 @@ export default function App() {
         setDraftTasks({ items: d.items || [], loading: false, error: null });
       })
       .catch((err) => setDraftTasks({ items: [], loading: false, error: err.message }));
+  }
+
+  function reloadProjects() {
+    setProjects((s) => ({ ...s, loading: true, error: null }));
+    fetch('/api/list?kind=active_projects&limit=50')
+      .then((r) => r.json())
+      .then((d) => {
+        if (!d.ok) throw new Error(d.error || 'fetch failed');
+        setProjects({ items: d.items || [], loading: false, error: null });
+      })
+      .catch((err) => setProjects({ items: [], loading: false, error: err.message }));
+  }
+
+  function reloadProjectedTasks() {
+    setProjectedTasks((s) => ({ ...s, loading: true, error: null }));
+    fetch('/api/list?kind=projected_active_tasks&limit=200')
+      .then((r) => r.json())
+      .then((d) => {
+        if (!d.ok) throw new Error(d.error || 'fetch failed');
+        setProjectedTasks({ items: d.items || [], loading: false, error: null });
+      })
+      .catch((err) => setProjectedTasks({ items: [], loading: false, error: err.message }));
+  }
+
+  // Mark Done — straight write to UB Tasks (Status=Done, Completed=today).
+  // ADR-005 §2 write boundary, ADR-006-formalize-write pending.
+  async function markTaskDone(task) {
+    try {
+      const res = await fetch('/api/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ submissionType: 'mark_task_done', pageId: task.id }),
+      });
+      const j = await res.json();
+      if (!j.ok) throw new Error(j.error || 'mark done failed');
+      // Refresh both project-tasks (within projects) and loose active list.
+      reloadProjectedTasks();
+      reloadActiveTasks();
+    } catch (err) {
+      alert(`Mark done failed: ${err.message}`);
+    }
   }
 
   async function releaseDraft(item) {
@@ -676,18 +724,27 @@ export default function App() {
           </Section>
         )}
 
-        <Section icon="✅" title="Your active tasks" count={activeTasks.items.length}>
+        <ProjectsSection
+          projects={projects.items}
+          tasksByProject={(() => {
+            const grouped = {};
+            for (const t of projectedTasks.items) {
+              if (!t.projectId) continue;
+              (grouped[t.projectId] = grouped[t.projectId] || []).push(t);
+            }
+            return grouped;
+          })()}
+          onMarkDone={markTaskDone}
+          loading={projects.loading || projectedTasks.loading}
+          error={projects.error || projectedTasks.error}
+        />
+
+        <Section icon="✅" title="Loose tasks (no project)" count={activeTasks.items.length}>
           {activeTasks.loading && <div className="loading">Loading from UB Tasks…</div>}
           {activeTasks.error && <div className="error">⚠ {activeTasks.error}</div>}
           {!activeTasks.loading && !activeTasks.error && activeTasks.items.length === 0 && (
             <div className="empty">
-              <div style={{ marginBottom: 6 }}>
-                <strong>No active tasks.</strong>
-              </div>
-              <div style={{ fontSize: 12, opacity: 0.75 }}>
-                Nothing on your plate that isn't Done or a draft. Capture something below or wait
-                for the Operator to promote your next captured thought.
-              </div>
+              <strong>Nothing loose.</strong> Every active task is attached to a project above.
             </div>
           )}
           {!activeTasks.loading && !activeTasks.error && activeTasks.items.map((t) => (
