@@ -5,3 +5,4 @@ dist
 .vercel
 *.log
 .DS_Store
+.commit-msg.tmp

@@ -21,13 +21,26 @@ import {
 // Source Narrative Intake page — Architect's pointer for "tell the story".
 const SOURCE_NARRATIVE_INTAKE_URL = 'https://www.notion.so/3651c57ac02b810eb1b4f724dec7c99d';
 
-// Map a route-chip agent label to the Intake Queue `Routing tag` value.
-// Architect extended Routing tag with "To: Architect" on 2026-05-28; other
-// agent destinations land as he ships more options.
-const AGENT_TO_ROUTING_TAG = {
-  Architect: 'To: Architect',
+// Capture-bar destinations per ADR-006 §6 (Brain↔GTD split rule).
+// - GTD  → Capture Inbox (Classifier + Promoter handle classification + landing in UB)
+// - Brain → Intake Queue with Routing tag = To: Architect (durable intelligence)
+// Each Capture has one destination; clicking the chip selects it, Send fires.
+const DESTINATIONS = {
+  GTD: {
+    key: 'GTD',
+    emoji: '📥',
+    label: 'Action',
+    sublabel: 'Land in my GTD',
+    tooltip: 'Send to Capture Inbox — Classifier picks up, Promoter lands it in UB Tasks/Notes/Projects.',
+  },
+  Brain: {
+    key: 'Brain',
+    emoji: '🧠',
+    label: 'Brain',
+    sublabel: 'For the Architect',
+    tooltip: 'Send to Intake Queue with Routing tag = To: Architect. Durable intelligence, not an actionable.',
+  },
 };
-const ROUTABLE_AGENTS = new Set(Object.keys(AGENT_TO_ROUTING_TAG));
 
 // Agent Freshness staleness thresholds (hours since Last loaded).
 const FRESH_HRS = 24;   // <24h → ok
@@ -209,46 +222,55 @@ export default function App() {
   }
   function dismiss(id) { setQueue(dismissThought(id)); }
 
-  // Send a captured thought to the Brain via the Intake Queue.
-  // Only fires when the item's routedTo is in ROUTABLE_AGENTS — other chips
-  // tag locally only, pending Architect's per-destination Routing tag entries.
-  async function sendThoughtToBrain(id) {
+  // Send a captured thought to its picked destination.
+  // routedTo is the destination key ('GTD' or 'Brain' per DESTINATIONS).
+  async function sendThought(id) {
     const item = queue.find((q) => q.id === id);
     if (!item) return;
-    const routingTag = AGENT_TO_ROUTING_TAG[item.routedTo];
-    if (!routingTag) {
-      alert(`Can't send yet — "${item.routedTo}" isn't a live Brain destination. Only ${[...ROUTABLE_AGENTS].join(', ')} routable right now.`);
+    const dest = DESTINATIONS[item.routedTo];
+    if (!dest) {
+      alert(`Pick a destination first — Action or Brain.`);
       return;
     }
     try {
+      const submission = dest.key === 'Brain'
+        ? {
+            submissionType: 'general_note',
+            title: item.text,
+            body: `Captured via Executive Console on ${new Date(item.capturedAt).toISOString()}.\n\nDestination: Brain (Intake Queue, Routing tag = To: Architect).`,
+            routingTag: 'To: Architect',
+          }
+        : {
+            submissionType: 'capture_inbox',
+            body: item.text,
+            capturedBy: 'Console',
+            source: `Console capture bar — ${new Date(item.capturedAt).toISOString()}`,
+          };
+
       const res = await fetch('/api/submit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          submissionType: 'general_note',
-          title: item.text,
-          body: `Captured via Executive Console on ${new Date(item.capturedAt).toISOString()}.\n\nDestination chip: ${item.routedTo}. Routing tag: ${routingTag}.`,
-          routingTag,
-        }),
+        body: JSON.stringify(submission),
       });
       const json = await res.json();
       if (!json.ok) throw new Error(json.error || 'send failed');
 
-      // Remove from local queue — the row lives in Brain now.
       setQueue(dismissThought(id));
       setOverlay({
         open: true,
         payload: {
-          sectionTag: '💭 Sent to Brain',
+          sectionTag: `${dest.emoji} Sent to ${dest.label}`,
           title: item.text,
           meta: {
-            'Routed to': item.routedTo,
-            'Routing tag': routingTag,
+            Destination: dest.key === 'Brain'
+              ? 'Brain — Intake Queue (To: Architect)'
+              : 'GTD — Capture Inbox (Classifier picks up next pass)',
             Captured: relativeAge(item.capturedAt),
             'Sent at': new Date().toLocaleString(),
           },
-          summary:
-            `Created as an Intake Queue row, <code>Captured by = Console</code>, <code>Status = Pending review</code>. ${item.routedTo}'s next /refresh will surface it.`,
+          summary: dest.key === 'Brain'
+            ? `Created as an Intake Queue row, <code>Captured by = Console</code>, <code>Routing tag = To: Architect</code>, <code>Status = Pending review</code>. Architect picks up on next /refresh.`
+            : `Created as a Capture Inbox row, <code>Captured by = Console</code>, <code>Promotion status = Pending promotion</code>. The Classifier will fill in Capture type/domain/title on its next pass (every 5 min when cron is live); the Promoter then routes to UB Tasks/Notes/Projects.`,
           actions: [
             { kind: 'primary', label: 'Open in Notion ↗', onClick: () => window.open(json.url, '_blank', 'noopener,noreferrer') },
             { kind: 'ghost', label: 'Close', onClick: () => setOverlay({ open: false, payload: null }) },
@@ -256,7 +278,7 @@ export default function App() {
         },
       });
     } catch (err) {
-      console.error('Send to Brain failed:', err);
+      console.error(`Send to ${dest.key} failed:`, err);
       alert(`Failed to send: ${err.message}`);
     }
   }
@@ -492,8 +514,8 @@ export default function App() {
           onCapture={capture}
           onRoute={route}
           onDismiss={dismiss}
-          onSendToBrain={sendThoughtToBrain}
-          routableAgents={ROUTABLE_AGENTS}
+          onSend={sendThought}
+          destinations={DESTINATIONS}
           onOpenSummary={openSummaryForQueueItem}
         />
 
