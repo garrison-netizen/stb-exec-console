@@ -1,0 +1,24 @@
+name = "stb-voice-capture"
+main = "voice-capture-worker.js"
+compatibility_date = "2024-11-12"
+
+# Set the three secrets via:
+#   wrangler secret put NOTION_TOKEN
+#   wrangler secret put NOTION_CAPTURE_INBOX_DS
+#   wrangler secret put WORKER_SECRET
+#
+# Or via the Cloudflare dashboard → Workers → stb-voice-capture →
+# Settings → Variables → Encrypted variables.
+
+# Optional: pin to a specific worker route. Without this, you get a default
+# *.workers.dev subdomain on first deploy, which is fine.
+# routes = [
+#   { pattern = "voice.spindletap.com/*", custom_domain = true }
+# ]
+
+# Optional: enable workers.dev subdomain (default: true).
+workers_dev = true
+
+# No external Notion bindings — we hit api.notion.com over plain fetch().
+# No KV / R2 / D1 needed — the Worker is stateless; the Capture Inbox row
+# IS the persistence layer.
