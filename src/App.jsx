@@ -127,12 +127,16 @@ export default function App() {
   // Source Narratives Needed — Living Archive rows with Needs narrative=true.
   const [sourceNarratives, setSourceNarratives] = useState({ items: [], loading: true, error: null });
 
+  // Active Tasks — UB Tasks where Status != Done and no '🤖 Operator draft' label.
+  const [activeTasks, setActiveTasks] = useState({ items: [], loading: true, error: null });
+
   // Load channel items where Code is the recipient + status Unread (matches
   // the doctrinal narrow filter shipped earlier today).
   useEffect(() => {
     reloadReconcileTargets();
     reloadFreshness();
     reloadSourceNarratives();
+    reloadActiveTasks();
   }, []);
 
   function reloadReconcileTargets() {
@@ -176,6 +180,17 @@ export default function App() {
         setSourceNarratives({ items: d.items || [], loading: false, error: null });
       })
       .catch((err) => setSourceNarratives({ items: [], loading: false, error: err.message }));
+  }
+
+  function reloadActiveTasks() {
+    setActiveTasks((s) => ({ ...s, loading: true, error: null }));
+    fetch('/api/list?kind=active_tasks&limit=25')
+      .then((r) => r.json())
+      .then((d) => {
+        if (!d.ok) throw new Error(d.error || 'fetch failed');
+        setActiveTasks({ items: d.items || [], loading: false, error: null });
+      })
+      .catch((err) => setActiveTasks({ items: [], loading: false, error: err.message }));
   }
 
   // ─── Source Narrative actions ────────────────────────────────
@@ -508,6 +523,86 @@ export default function App() {
           externalCount={externalCount}
           lastReconciled="3d ago"
         />
+
+        <Section icon="✅" title="Your active tasks" count={activeTasks.items.length}>
+          {activeTasks.loading && <div className="loading">Loading from UB Tasks…</div>}
+          {activeTasks.error && <div className="error">⚠ {activeTasks.error}</div>}
+          {!activeTasks.loading && !activeTasks.error && activeTasks.items.length === 0 && (
+            <div className="empty">
+              <div style={{ marginBottom: 6 }}>
+                <strong>No active tasks.</strong>
+              </div>
+              <div style={{ fontSize: 12, opacity: 0.75 }}>
+                Nothing on your plate that isn't Done or a draft. Capture something below or wait
+                for the Operator to promote your next captured thought.
+              </div>
+            </div>
+          )}
+          {!activeTasks.loading && !activeTasks.error && activeTasks.items.map((t) => {
+            const today = new Date().toISOString().slice(0, 10);
+            const isOverdue = t.due && t.due < today;
+            const isToday = t.due === today;
+            const priorityClass =
+              t.priority === 'High' ? 'urgent' : t.priority === 'Medium' ? 'medium' : '';
+            return (
+              <Item
+                key={t.id}
+                urgency={priorityClass}
+                extraClass={t.domainLabel ? `dom-${(t.domainLabel || '').toLowerCase().replace(/\s+/g, '-')}` : ''}
+                title={t.name}
+                summaryId={t.id}
+                onOpenSummary={() => window.open(t.url, '_blank', 'noopener,noreferrer')}
+                meta={
+                  <>
+                    {t.domainLabel && (
+                      <span className="domain-badge stb">{t.domainLabel}</span>
+                    )}
+                    <span className={`pill status-${(t.status || '').toLowerCase().replace(/\s+/g, '-')}`}>
+                      {t.status}
+                    </span>
+                    {t.priority && (
+                      <span className={`pill priority-${t.priority.toLowerCase()}`}>
+                        {t.priority}
+                      </span>
+                    )}
+                    {t.due && (
+                      <>
+                        <span className="sep">·</span>
+                        <span className={`age ${isOverdue ? 'stale' : isToday ? '' : ''}`}>
+                          {isOverdue ? '⚠ overdue ' : isToday ? 'due today · ' : 'due '}
+                          {t.due}
+                        </span>
+                      </>
+                    )}
+                    {t.smartList && (
+                      <>
+                        <span className="sep">·</span>
+                        <span>{t.smartList}</span>
+                      </>
+                    )}
+                    {t.hasProject && (
+                      <>
+                        <span className="sep">·</span>
+                        <span>in project</span>
+                      </>
+                    )}
+                  </>
+                }
+                actions={
+                  <>
+                    <button
+                      type="button"
+                      className="btn ghost"
+                      onClick={() => window.open(t.url, '_blank', 'noopener,noreferrer')}
+                    >
+                      Open in Notion <span className="btn-arrow">↗</span>
+                    </button>
+                  </>
+                }
+              />
+            );
+          })}
+        </Section>
 
         <YourQueueSection
           items={queue}
