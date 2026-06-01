@@ -4,6 +4,7 @@ import Hero from './components/Hero.jsx';
 import Section from './components/Section.jsx';
 import Item from './components/Item.jsx';
 import YourQueueSection from './components/YourQueueSection.jsx';
+import TaskListRow from './components/TaskListRow.jsx';
 import CaptureBar from './components/CaptureBar.jsx';
 import SummaryOverlay from './components/SummaryOverlay.jsx';
 import {
@@ -689,112 +690,16 @@ export default function App() {
               </div>
             </div>
           )}
-          {!activeTasks.loading && !activeTasks.error && activeTasks.items.map((t) => {
-            const today = new Date().toISOString().slice(0, 10);
-            const isOverdue = t.due && t.due < today;
-            const isToday = t.due === today;
-            const priorityClass =
-              t.priority === 'High' ? 'urgent' : t.priority === 'Medium' ? 'medium' : '';
-            return (
-              <Item
-                key={t.id}
-                urgency={priorityClass}
-                extraClass={t.domainLabel ? `dom-${(t.domainLabel || '').toLowerCase().replace(/\s+/g, '-')}` : ''}
-                title={t.name}
-                summaryId={t.id}
-                onOpenSummary={() => window.open(t.url, '_blank', 'noopener,noreferrer')}
-                meta={
-                  <>
-                    {t.domainLabel && (
-                      <span className="domain-badge stb">{t.domainLabel}</span>
-                    )}
-                    <span className={`pill status-${(t.status || '').toLowerCase().replace(/\s+/g, '-')}`}>
-                      {t.status}
-                    </span>
-                    {t.priority && (
-                      <span className={`pill priority-${t.priority.toLowerCase()}`}>
-                        {t.priority}
-                      </span>
-                    )}
-                    {t.due && (
-                      <>
-                        <span className="sep">·</span>
-                        <span className={`age ${isOverdue ? 'stale' : isToday ? '' : ''}`}>
-                          {isOverdue ? '⚠ overdue ' : isToday ? 'due today · ' : 'due '}
-                          {t.due}
-                        </span>
-                      </>
-                    )}
-                    {t.smartList && (
-                      <>
-                        <span className="sep">·</span>
-                        <span>{t.smartList}</span>
-                      </>
-                    )}
-                    {t.hasProject && (
-                      <>
-                        <span className="sep">·</span>
-                        <span>in project</span>
-                      </>
-                    )}
-                  </>
-                }
-                actions={
-                  <>
-                    <button
-                      type="button"
-                      className="btn ghost"
-                      onClick={() => window.open(t.url, '_blank', 'noopener,noreferrer')}
-                    >
-                      Open in Notion <span className="btn-arrow">↗</span>
-                    </button>
-                  </>
-                }
-              />
-            );
-          })}
+          {!activeTasks.loading && !activeTasks.error && activeTasks.items.map((t) => (
+            <TaskListRow key={t.id} task={t} variant="active" />
+          ))}
         </Section>
 
         {(draftTasks.items.length > 0 || draftTasks.error) && (
           <Section icon="🤖" title="Operator drafts awaiting release" count={draftTasks.items.length} countTone="gold">
             {draftTasks.error && <div className="error">⚠ {draftTasks.error}</div>}
             {!draftTasks.error && draftTasks.items.map((t) => (
-              <Item
-                key={t.id}
-                extraClass={t.domainLabel ? `dom-${(t.domainLabel || '').toLowerCase().replace(/\s+/g, '-')}` : ''}
-                title={t.name}
-                summaryId={t.id}
-                onOpenSummary={() => window.open(t.url, '_blank', 'noopener,noreferrer')}
-                meta={
-                  <>
-                    {t.domainLabel && <span className="domain-badge stb">{t.domainLabel}</span>}
-                    <span className="pill ghost">🤖 draft</span>
-                    {t.priority && (
-                      <span className={`pill priority-${t.priority.toLowerCase()}`}>{t.priority}</span>
-                    )}
-                    {t.due && (
-                      <>
-                        <span className="sep">·</span>
-                        <span>due {t.due}</span>
-                      </>
-                    )}
-                  </>
-                }
-                actions={
-                  <>
-                    <button type="button" className="btn primary" onClick={() => releaseDraft(t)}>
-                      Release
-                    </button>
-                    <button
-                      type="button"
-                      className="btn ghost"
-                      onClick={() => window.open(t.url, '_blank', 'noopener,noreferrer')}
-                    >
-                      Open <span className="btn-arrow">↗</span>
-                    </button>
-                  </>
-                }
-              />
+              <TaskListRow key={t.id} task={t} variant="draft" onRelease={releaseDraft} />
             ))}
           </Section>
         )}

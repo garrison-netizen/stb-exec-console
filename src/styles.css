@@ -380,6 +380,110 @@ html { scroll-behavior: smooth; }
 }
 
 /* Items — per-domain left stripe */
+/* ─────────────────────────────────────────────────────────────
+   Task list rows — compact, list-shape variant of Item.
+   Used by Active Tasks and Operator drafts (denser scannable list).
+   ───────────────────────────────────────────────────────────── */
+.task-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 12px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  font-size: 13px;
+  line-height: 1.4;
+  transition: background 0.12s, border-color 0.12s;
+}
+.task-row + .task-row { margin-top: 4px; }
+.task-row:hover {
+  background: var(--panel-2);
+  border-color: var(--line-bright);
+}
+.task-row-dot {
+  flex: 0 0 18px;
+  color: var(--text-faint);
+  font-size: 14px;
+  text-align: center;
+}
+.task-row-dot.doing { color: var(--blue, #6aa9ff); }
+.task-row-title {
+  flex: 1 1 auto;
+  color: var(--text);
+  text-decoration: none;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+.task-row-title:hover { color: var(--text-bright, #fff); text-decoration: underline; }
+.task-row-meta {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--text-faint);
+  font-size: 11.5px;
+  white-space: nowrap;
+}
+.task-row-domain {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-dim);
+  padding: 1px 7px;
+  border-radius: 3px;
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.task-row-priority {
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-weight: 600;
+}
+.task-row-priority.p-high { color: var(--red); }
+.task-row-priority.p-medium { color: var(--gold, #f3c14e); }
+.task-row-priority.p-low { color: var(--text-faint); }
+.task-row-due { color: var(--text-dim); }
+.task-row-due.overdue { color: var(--red); font-weight: 600; }
+.task-row-due.today { color: var(--gold, #f3c14e); font-weight: 600; }
+.task-row-smartlist {
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-faint);
+}
+.task-row-release {
+  flex: 0 0 auto;
+  background: transparent;
+  color: var(--text-dim);
+  border: 1px solid var(--line-bright);
+  border-radius: 4px;
+  padding: 3px 10px;
+  font-size: 11px;
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s, border-color 0.12s;
+}
+.task-row-release:hover {
+  background: var(--text);
+  color: var(--panel);
+  border-color: var(--text);
+}
+.task-row-open {
+  flex: 0 0 18px;
+  color: var(--text-faint);
+  text-decoration: none;
+  text-align: center;
+  font-size: 13px;
+}
+.task-row-open:hover { color: var(--text); }
+
+/* Draft rows get a subtle gold accent so they're visually distinct */
+.task-row-draft {
+  border-left: 2px solid var(--gold, #f3c14e);
+}
+
 .item {
   background: var(--panel);
   border: 1px solid var(--line);
