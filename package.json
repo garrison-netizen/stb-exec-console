@@ -9,6 +9,7 @@
     "preview": "vite preview",
     "classifier": "node scripts/run-classifier.js",
     "classifier:dry": "node scripts/run-classifier.js --dry-run",
+    "classifier:test": "node scripts/test-classifier-v1.1.js",
     "promoter": "node scripts/run-gtd-promoter.js",
     "promoter:dry": "node scripts/run-gtd-promoter.js --dry-run"
   },
