@@ -1,12 +1,9 @@
 import { useEffect, useState } from 'react';
-import Sidebar from './components/Sidebar.jsx';
-import Hero from './components/Hero.jsx';
 import Section from './components/Section.jsx';
 import Item from './components/Item.jsx';
 import YourQueueSection from './components/YourQueueSection.jsx';
 import TaskListRow from './components/TaskListRow.jsx';
 import ProjectsSection from './components/ProjectsSection.jsx';
-import CaptureBar from './components/CaptureBar.jsx';
 import SummaryOverlay from './components/SummaryOverlay.jsx';
 import {
   loadQueue,
@@ -43,6 +40,14 @@ const DESTINATIONS = {
 // Agent Freshness staleness thresholds (hours since Last loaded).
 const FRESH_HRS = 24;   // <24h → ok
 const STALE_HRS = 120;  // 24–120h → stale; >120h or null → bad
+
+// Rock status → dot glyph (Company Rocks, System view).
+const ROCK_STATUS_DOT = {
+  'On Track': '🟢',
+  'Off Track': '🔴',
+  Done: '✅',
+  'Not Started': '⚪',
+};
 
 function relAgeShort(iso) {
   if (!iso) return 'never';
@@ -110,7 +115,8 @@ function extraClassForTags(tags = []) {
 
 export default function App() {
   const [queue, setQueue] = useState(() => loadQueue());
-  const [activeDomain, setActiveDomain] = useState('all');
+  // Four-screen nav (2026-07-09 redesign): needs | tasks | capture | system.
+  const [view, setView] = useState('needs');
   const [overlay, setOverlay] = useState({ open: false, payload: null });
   const [infoOpen, setInfoOpen] = useState(false);
   const [reconciling, setReconciling] = useState(false);
@@ -700,346 +706,476 @@ export default function App() {
   const lastReconShort = lastRecon.loading ? '…' : lastRecon.when ? relAgeShort(lastRecon.when) : 'never';
   const lastReconLabel = lastRecon.loading ? '…' : lastRecon.when ? `${relAgeShort(lastRecon.when)} ago` : 'never';
 
+  // Per-tab badge counts.
+  const heldCount = heldCaptures.items.length;
+  const draftCount = draftTasks.items.length;
+  const needsBadge = heldCount + draftCount + decisionCount + sourceCount;
+  const tasksBadge = activeTasks.items.length + projectedTasks.items.length;
+  const needsLoading =
+    heldCaptures.loading || draftTasks.loading || decisions.loading || sourceNarratives.loading;
+
+  const TABS = [
+    { key: 'needs', icon: '✋', label: 'Needs You', badge: needsBadge, hot: needsBadge > 0 },
+    { key: 'tasks', icon: '✅', label: 'Tasks', badge: tasksBadge },
+    { key: 'capture', icon: '💭', label: 'Capture', badge: queueCount },
+    { key: 'system', icon: '🧭', label: 'System', badge: staleAgentCount },
+  ];
+
+  const rockItems = rocks.items;
+  const rockQuarters = [...new Set(rockItems.map((r) => r.quarter).filter(Boolean))];
+  const rocksLabel = rockQuarters.length === 1 ? `${rockQuarters[0]} Rocks` : 'Rocks';
+
   return (
-    <div className="grid">
-      <Sidebar
-        activeDomain={activeDomain}
-        onDomainChange={setActiveDomain}
-        status={{
-          needYou: totalNeedsYou,
-          queueCount,
-          staleCount: staleAgentCount,
-          lastReconciled: lastReconShort,
-        }}
-        rocks={rocks}
-        freshness={freshness}
-        onReconcile={onReconcile}
-        reconciling={reconciling}
-        reconcilePending={reconcileTargets.length}
-      />
+    <div className="app">
+      <header className="topbar">
+        <img src="/logo.png" alt="Spindletap" className="brand-logo" />
+        <h1>Executive Console</h1>
+        <div className="topbar-status">
+          <span className="need">{needsBadge} need{needsBadge === 1 ? 's' : ''} you</span>
+          <br />
+          last reconciled {lastReconLabel}
+        </div>
+      </header>
 
-      <main className="main">
-        <Hero
-          count={totalNeedsYou}
-          queueCount={queueCount}
-          sourceCount={sourceCount}
-          decisionCount={decisionCount}
-          externalCount={externalCount}
-          lastReconciled={lastReconLabel}
-        />
+      <nav className="tabbar">
+        {TABS.map((t) => (
+          <button
+            key={t.key}
+            type="button"
+            className={`tab ${view === t.key ? 'on' : ''}`}
+            onClick={() => setView(t.key)}
+          >
+            <span>{t.icon} {t.label}</span>
+            {t.badge > 0 && <span className={`tab-badge ${t.hot ? 'hot' : ''}`}>{t.badge}</span>}
+          </button>
+        ))}
+      </nav>
 
-        {(heldCaptures.items.length > 0 || heldCaptures.loading || heldCaptures.error) && (
-          <Section icon="✋" title="Held for your call" count={heldCaptures.items.length} countTone="urgent">
-            {heldCaptures.loading && <div className="loading">Loading from Capture Inbox…</div>}
-            {heldCaptures.error && <div className="error">⚠ {heldCaptures.error}</div>}
-            {!heldCaptures.loading && !heldCaptures.error && heldCaptures.items.length === 0 && (
-              <div className="empty">Nothing held — Classifier handled everything cleanly.</div>
+      <main className="view">
+        {view === 'needs' && (
+          <>
+            <div className="hero-strip">
+              <h2>Waiting on your call: <span className="n">{needsBadge}</span></h2>
+              <span className="sub">
+                {heldCount} held · {draftCount} draft{draftCount === 1 ? '' : 's'} · {decisionCount} decision{decisionCount === 1 ? '' : 's'} · {sourceCount} narrative{sourceCount === 1 ? '' : 's'}
+              </span>
+            </div>
+
+            {needsBadge === 0 && !needsLoading && (
+              <div className="all-clear">
+                <div className="big">✅</div>
+                <div className="head">All clear</div>
+                <div className="sub">Nothing is waiting on your call right now.</div>
+              </div>
             )}
-            {!heldCaptures.loading && !heldCaptures.error && heldCaptures.items.map((c) => {
-              const preview = (c.title || c.body || '(no content)').slice(0, 200);
-              return (
-                <Item
-                  key={c.id}
-                  extraClass={c.captureDomain ? `dom-${c.captureDomain.toLowerCase().replace(/\s+/g, '-')}` : ''}
-                  title={preview}
-                  summaryId={c.id}
-                  onOpenSummary={() => window.open(c.url, '_blank', 'noopener,noreferrer')}
-                  meta={
-                    <>
-                      {c.captureDomain && <span className="domain-badge stb">{c.captureDomain}</span>}
-                      <span className="pill ghost">by {c.capturedBy || '?'}</span>
-                      {c.dateCaptured && (
+
+            {(heldCaptures.items.length > 0 || heldCaptures.loading || heldCaptures.error) && (
+              <Section icon="✋" title="Held for your call" count={heldCaptures.items.length} countTone="urgent">
+                {heldCaptures.loading && <div className="loading">Loading from Capture Inbox…</div>}
+                {heldCaptures.error && <div className="error">⚠ {heldCaptures.error}</div>}
+                {!heldCaptures.loading && !heldCaptures.error && heldCaptures.items.map((c) => {
+                  const preview = (c.title || c.body || '(no content)').slice(0, 200);
+                  return (
+                    <Item
+                      key={c.id}
+                      extraClass={c.captureDomain ? `dom-${c.captureDomain.toLowerCase().replace(/\s+/g, '-')}` : ''}
+                      title={preview}
+                      summaryId={c.id}
+                      onOpenSummary={() => window.open(c.url, '_blank', 'noopener,noreferrer')}
+                      meta={
                         <>
-                          <span className="sep">·</span>
-                          <span>captured {c.dateCaptured.slice(0, 10)}</span>
+                          {c.captureDomain && <span className="domain-badge stb">{c.captureDomain}</span>}
+                          <span className="pill ghost">by {c.capturedBy || '?'}</span>
+                          {c.dateCaptured && (
+                            <>
+                              <span className="sep">·</span>
+                              <span>captured {c.dateCaptured.slice(0, 10)}</span>
+                            </>
+                          )}
+                          {c.bounceReason && (
+                            <>
+                              <span className="sep">·</span>
+                              <span className="age stale">{c.bounceReason}</span>
+                            </>
+                          )}
                         </>
-                      )}
-                      {c.bounceReason && (
+                      }
+                      actions={
                         <>
-                          <span className="sep">·</span>
-                          <span className="age stale">{c.bounceReason}</span>
+                          <button type="button" className="btn primary" onClick={() => reclassifyHeld(c, 'Task')}>
+                            Task
+                          </button>
+                          <button type="button" className="btn secondary" onClick={() => reclassifyHeld(c, 'Note')}>
+                            Note
+                          </button>
+                          <button type="button" className="btn secondary" onClick={() => reclassifyHeld(c, 'Project')}>
+                            Project
+                          </button>
+                          <button type="button" className="btn danger" onClick={() => discardHeld(c)}>
+                            Drop
+                          </button>
+                          <button
+                            type="button"
+                            className="btn ghost"
+                            onClick={() => window.open(c.url, '_blank', 'noopener,noreferrer')}
+                          >
+                            Open <span className="btn-arrow">↗</span>
+                          </button>
                         </>
-                      )}
-                    </>
-                  }
-                  actions={
-                    <>
-                      <button type="button" className="btn primary" onClick={() => reclassifyHeld(c, 'Task')}>
-                        Task
-                      </button>
-                      <button type="button" className="btn secondary" onClick={() => reclassifyHeld(c, 'Note')}>
-                        Note
-                      </button>
-                      <button type="button" className="btn secondary" onClick={() => reclassifyHeld(c, 'Project')}>
-                        Project
-                      </button>
-                      <button type="button" className="btn danger" onClick={() => discardHeld(c)}>
-                        Drop
-                      </button>
-                      <button
-                        type="button"
-                        className="btn ghost"
-                        onClick={() => window.open(c.url, '_blank', 'noopener,noreferrer')}
-                      >
-                        Open <span className="btn-arrow">↗</span>
-                      </button>
-                    </>
-                  }
-                />
-              );
-            })}
-          </Section>
-        )}
+                      }
+                    />
+                  );
+                })}
+              </Section>
+            )}
 
-        <ProjectsSection
-          projects={projects.items}
-          tasksByProject={(() => {
-            const grouped = {};
-            for (const t of projectedTasks.items) {
-              if (!t.projectId) continue;
-              (grouped[t.projectId] = grouped[t.projectId] || []).push(t);
-            }
-            return grouped;
-          })()}
-          onMarkDone={markTaskDone}
-          loading={projects.loading || projectedTasks.loading}
-          error={projects.error || projectedTasks.error}
-        />
+            {(draftTasks.items.length > 0 || draftTasks.error) && (
+              <Section icon="🤖" title="Operator drafts awaiting release" count={draftTasks.items.length} countTone="gold">
+                {draftTasks.error && <div className="error">⚠ {draftTasks.error}</div>}
+                {!draftTasks.error && draftTasks.items.map((t) => (
+                  <TaskListRow key={t.id} task={t} variant="draft" onRelease={releaseDraft} />
+                ))}
+              </Section>
+            )}
 
-        <Section icon="✅" title="Loose tasks (no project)" count={activeTasks.items.length}>
-          {activeTasks.loading && <div className="loading">Loading from UB Tasks…</div>}
-          {activeTasks.error && <div className="error">⚠ {activeTasks.error}</div>}
-          {!activeTasks.loading && !activeTasks.error && activeTasks.items.length === 0 && (
-            <div className="empty">
-              <strong>Nothing loose.</strong> Every active task is attached to a project above.
-            </div>
-          )}
-          {!activeTasks.loading && !activeTasks.error && activeTasks.items.map((t) => (
-            <TaskListRow key={t.id} task={t} variant="active" />
-          ))}
-        </Section>
+            {(decisions.items.length > 0 || decisions.loading || decisions.error) && (
+              <Section icon="⚖️" title="Decisions pending your call" count={decisionCount}>
+                {decisions.loading && <div className="loading">Loading from Decision Pipeline…</div>}
+                {decisions.error && <div className="error">⚠ {decisions.error}</div>}
+                {!decisions.loading && !decisions.error && decisions.items.map((it) => {
+                  const ageDays = it.dateLogged
+                    ? Math.floor((Date.now() - new Date(it.dateLogged).getTime()) / 86_400_000)
+                    : null;
+                  return (
+                    <Item
+                      key={it.id}
+                      urgency={it.status === 'Ready' ? 'urgent' : it.status === 'Pending input' ? 'medium' : undefined}
+                      extraClass="dom-system"
+                      title={it.decision}
+                      summaryId={it.id}
+                      onOpenSummary={() => openSummaryForDecision(it)}
+                      meta={
+                        <>
+                          <span className="domain-badge stb">{it.status}</span>
+                          {ageDays !== null && (
+                            <>
+                              <span className="sep">·</span>
+                              <span className={`age ${ageDays > 14 ? 'stale' : ''}`}>
+                                {ageDays === 0 ? 'logged today' : `in pipeline ${ageDays}d`}
+                              </span>
+                            </>
+                          )}
+                          {it.targetResolution && (
+                            <>
+                              <span className="sep">·</span>
+                              <span>target {it.targetResolution}</span>
+                            </>
+                          )}
+                        </>
+                      }
+                      actions={
+                        <>
+                          <button type="button" className="btn primary" onClick={() => openSummaryForDecision(it)}>
+                            Context
+                          </button>
+                          <a className="btn ghost" href={it.url} target="_blank" rel="noreferrer">
+                            Open in Notion <span className="btn-arrow">↗</span>
+                          </a>
+                        </>
+                      }
+                    />
+                  );
+                })}
+              </Section>
+            )}
 
-        {(draftTasks.items.length > 0 || draftTasks.error) && (
-          <Section icon="🤖" title="Operator drafts awaiting release" count={draftTasks.items.length} countTone="gold">
-            {draftTasks.error && <div className="error">⚠ {draftTasks.error}</div>}
-            {!draftTasks.error && draftTasks.items.map((t) => (
-              <TaskListRow key={t.id} task={t} variant="draft" onRelease={releaseDraft} />
-            ))}
-          </Section>
-        )}
-
-        <YourQueueSection
-          items={queue}
-          onCapture={capture}
-          onRoute={route}
-          onDismiss={dismiss}
-          onSend={sendThought}
-          destinations={DESTINATIONS}
-          onOpenSummary={openSummaryForQueueItem}
-        />
-
-        <Section icon="📖" title="Source narratives needed" count={sourceCount}>
-          {sourceNarratives.loading && <div className="loading">Loading from Living Archive…</div>}
-          {sourceNarratives.error && (
-            <div className="error">
-              {sourceNarratives.error.includes('object_not_found') ? (
-                <>
-                  ⚠ The Living Archive database isn't shared with the Console integration yet.
-                  <br />
-                  <span style={{ fontSize: 12, opacity: 0.85 }}>
-                    Open Living Archive in Notion → ⋯ menu → Connections → add <strong>STB Executive Console</strong>.
-                    Same one-time grant needed for Reconciliation Log.
-                  </span>
-                </>
-              ) : (
-                <>⚠ {sourceNarratives.error}</>
-              )}
-            </div>
-          )}
-          {!sourceNarratives.loading && !sourceNarratives.error && sourceCount === 0 && (
-            <div className="empty">
-              <div style={{ marginBottom: 6 }}>
-                <strong>Nothing waiting on you for a source narrative.</strong>
-              </div>
-              <div style={{ fontSize: 12, opacity: 0.75, lineHeight: 1.5 }}>
-                Entries land here when an agent flags a Living Archive row as needing
-                your first-person account (Doctrine 3) — either by creating a stub or by you
-                clicking <em>Tell the story</em> on an existing row. The flag schema went
-                live today; no rows are flagged yet.
-              </div>
-            </div>
-          )}
-          {sourceNarratives.items.map((it) => {
-            const ageDays = it.date
-              ? Math.floor((Date.now() - new Date(it.date).getTime()) / 86_400_000)
-              : null;
-            const ageState = ageDays !== null && ageDays > 7 ? 'stale' : '';
-            const ageLabel = ageDays === null ? 'no date' : ageDays === 0 ? 'today' : `${ageDays}d ago`;
-            return (
-              <Item
-                key={it.id}
-                extraClass={extraClassForTags(it.tags)}
-                title={it.title || '(untitled Living Archive row)'}
-                summaryId={it.id}
-                onOpenSummary={() =>
-                  setOverlay({
-                    open: true,
-                    payload: {
-                      sectionTag: '📖 Source narrative needed',
-                      title: it.title || '(untitled)',
-                      meta: {
-                        ...(it.type && { Type: it.type }),
-                        ...(it.tags?.length && { Tags: it.tags.join(', ') }),
-                        Date: it.date || '(no date)',
-                        Destination: 'Living Archive (this row)',
-                      },
-                      summary:
-                        'Architect flagged this Living Archive row as needing your first-person source narrative (Doctrine 3). Click <strong>Tell the story</strong> to open the Source Narrative Intake page; click <strong>Drop</strong> if you\'ll never author it.',
-                      actions: [
-                        { kind: 'primary', label: 'Tell the story ↗', onClick: () => tellTheStory(it) },
-                        { kind: 'danger', label: 'Drop', onClick: () => { dropNarrative(it); setOverlay({ open: false, payload: null }); } },
-                        { kind: 'ghost', label: 'Open row ↗', onClick: () => window.open(it.url, '_blank', 'noopener,noreferrer') },
-                      ],
-                    },
-                  })
-                }
-                meta={
-                  <>
-                    {it.type && <span className="domain-badge stb">{it.type}</span>}
-                    {it.tags?.slice(0, 3).map((t) => (
-                      <span key={t} className="domain-badge stb">{t}</span>
-                    ))}
-                    <span>destination: Living Archive</span>
-                    <span className="sep">·</span>
-                    <span className={`age ${ageState}`}>{ageLabel}</span>
-                  </>
-                }
-                actions={
-                  <>
-                    <button type="button" className="btn primary" onClick={() => tellTheStory(it)}>Tell the story ↗</button>
-                    <button type="button" className="btn danger" onClick={() => dropNarrative(it)}>Drop</button>
-                    <a className="btn ghost" href={it.url} target="_blank" rel="noreferrer">
-                      Open in Notion <span className="btn-arrow">↗</span>
-                    </a>
-                  </>
-                }
-              />
-            );
-          })}
-        </Section>
-
-        <Section icon="⚖️" title="Decisions pending your call" count={decisionCount}>
-          {decisions.loading && <div className="loading">Loading from Decision Pipeline…</div>}
-          {decisions.error && <div className="error">⚠ {decisions.error}</div>}
-          {!decisions.loading && !decisions.error && decisionCount === 0 && (
-            <div className="empty">
-              <strong>No decisions in formation.</strong> Rows land here from the Brain's
-              Decision Pipeline when a decision is Forming, Pending input, or Ready for your call.
-            </div>
-          )}
-          {!decisions.loading && !decisions.error && decisions.items.map((it) => {
-            const ageDays = it.dateLogged
-              ? Math.floor((Date.now() - new Date(it.dateLogged).getTime()) / 86_400_000)
-              : null;
-            return (
-              <Item
-                key={it.id}
-                urgency={it.status === 'Ready' ? 'urgent' : it.status === 'Pending input' ? 'medium' : undefined}
-                extraClass="dom-system"
-                title={it.decision}
-                summaryId={it.id}
-                onOpenSummary={() => openSummaryForDecision(it)}
-                meta={
-                  <>
-                    <span className="domain-badge stb">{it.status}</span>
-                    {ageDays !== null && (
+            {(sourceNarratives.items.length > 0 || sourceNarratives.error) && (
+              <Section icon="📖" title="Source narratives needed" count={sourceCount}>
+                {sourceNarratives.error && (
+                  <div className="error">
+                    {sourceNarratives.error.includes('object_not_found') ? (
                       <>
-                        <span className="sep">·</span>
-                        <span className={`age ${ageDays > 14 ? 'stale' : ''}`}>
-                          {ageDays === 0 ? 'logged today' : `in pipeline ${ageDays}d`}
+                        ⚠ The Living Archive database isn't shared with the Console integration yet.
+                        <br />
+                        <span style={{ fontSize: 12, opacity: 0.85 }}>
+                          Open Living Archive in Notion → ⋯ menu → Connections → add <strong>STB Executive Console</strong>.
                         </span>
                       </>
-                    )}
-                    {it.targetResolution && (
-                      <>
-                        <span className="sep">·</span>
-                        <span>target {it.targetResolution}</span>
-                      </>
-                    )}
-                  </>
-                }
-                actions={
-                  <>
-                    <button type="button" className="btn primary" onClick={() => openSummaryForDecision(it)}>
-                      Context
-                    </button>
-                    <a className="btn ghost" href={it.url} target="_blank" rel="noreferrer">
-                      Open in Notion <span className="btn-arrow">↗</span>
-                    </a>
-                  </>
-                }
-              />
-            );
-          })}
-        </Section>
-
-        <div className={`info-section ${infoOpen ? 'open' : ''}`}>
-          <div className="info-header" onClick={() => setInfoOpen((s) => !s)}>
-            <span className="section-icon" style={{ fontSize: 14 }}>ℹ️</span>
-            <span className="info-title">
-              Was you, now external — {externalCount} item{externalCount === 1 ? '' : 's'} waiting on providers
-            </span>
-            {externalHolds.loading && <span className="mocked-tag" title="Loading from Pending Work">…</span>}
-            <span className="section-chevron" style={{ marginLeft: 'auto' }}>
-              {infoOpen ? '▲' : '▼'}
-            </span>
-          </div>
-          {infoOpen && (
-            <div className="info-list">
-              {externalHolds.error && (
-                <div className="info-row">
-                  <span className="error">
-                    {externalHolds.error.includes('object_not_found') ? (
-                      <>⚠ Pending Work isn't shared with the Console integration yet — open it in Notion → ⋯ → Connections → add STB Executive Console.</>
                     ) : (
-                      <>⚠ {externalHolds.error}</>
+                      <>⚠ {sourceNarratives.error}</>
                     )}
-                  </span>
-                </div>
-              )}
-              {!externalHolds.loading && !externalHolds.error && externalCount === 0 && (
-                <div className="info-row">
-                  <span>Nothing waiting on outside parties.</span>
-                </div>
-              )}
-              {externalHolds.items.map((i) => {
-                const days = i.dateLogged
-                  ? Math.floor((Date.now() - new Date(i.dateLogged).getTime()) / 86_400_000)
-                  : null;
-                return (
-                  <div key={i.id} className="info-row">
-                    <span>
-                      <a href={i.url} target="_blank" rel="noreferrer" style={{ color: 'inherit' }}>
-                        {i.title}
-                      </a>
-                      {i.workstream ? ` — ${i.workstream}` : ''}
-                    </span>
-                    <span className="external">
-                      awaiting external event{days !== null ? ` · ${days}d` : ''}
-                    </span>
                   </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
+                )}
+                {sourceNarratives.items.map((it) => {
+                  const ageDays = it.date
+                    ? Math.floor((Date.now() - new Date(it.date).getTime()) / 86_400_000)
+                    : null;
+                  const ageState = ageDays !== null && ageDays > 7 ? 'stale' : '';
+                  const ageLabel = ageDays === null ? 'no date' : ageDays === 0 ? 'today' : `${ageDays}d ago`;
+                  return (
+                    <Item
+                      key={it.id}
+                      extraClass={extraClassForTags(it.tags)}
+                      title={it.title || '(untitled Living Archive row)'}
+                      summaryId={it.id}
+                      onOpenSummary={() =>
+                        setOverlay({
+                          open: true,
+                          payload: {
+                            sectionTag: '📖 Source narrative needed',
+                            title: it.title || '(untitled)',
+                            meta: {
+                              ...(it.type && { Type: it.type }),
+                              ...(it.tags?.length && { Tags: it.tags.join(', ') }),
+                              Date: it.date || '(no date)',
+                              Destination: 'Living Archive (this row)',
+                            },
+                            summary:
+                              'Architect flagged this Living Archive row as needing your first-person source narrative (Doctrine 3). Click <strong>Tell the story</strong> to open the Source Narrative Intake page; click <strong>Drop</strong> if you\'ll never author it.',
+                            actions: [
+                              { kind: 'primary', label: 'Tell the story ↗', onClick: () => tellTheStory(it) },
+                              { kind: 'danger', label: 'Drop', onClick: () => { dropNarrative(it); setOverlay({ open: false, payload: null }); } },
+                              { kind: 'ghost', label: 'Open row ↗', onClick: () => window.open(it.url, '_blank', 'noopener,noreferrer') },
+                            ],
+                          },
+                        })
+                      }
+                      meta={
+                        <>
+                          {it.type && <span className="domain-badge stb">{it.type}</span>}
+                          {it.tags?.slice(0, 3).map((t) => (
+                            <span key={t} className="domain-badge stb">{t}</span>
+                          ))}
+                          <span>destination: Living Archive</span>
+                          <span className="sep">·</span>
+                          <span className={`age ${ageState}`}>{ageLabel}</span>
+                        </>
+                      }
+                      actions={
+                        <>
+                          <button type="button" className="btn primary" onClick={() => tellTheStory(it)}>Tell the story ↗</button>
+                          <button type="button" className="btn danger" onClick={() => dropNarrative(it)}>Drop</button>
+                          <a className="btn ghost" href={it.url} target="_blank" rel="noreferrer">
+                            Open in Notion <span className="btn-arrow">↗</span>
+                          </a>
+                        </>
+                      }
+                    />
+                  );
+                })}
+              </Section>
+            )}
+          </>
+        )}
 
-        <nav className="secondary-nav">
-          <a href="#" onClick={(e) => e.preventDefault()} title="v2 — full Brain browse + the legacy submission form">Browse Brain</a>
-          <a href="#" onClick={(e) => e.preventDefault()} title="v2 — full activity timeline">Recent activity</a>
-          <a href="#" onClick={(e) => e.preventDefault()} title="v2 — health + last-active for each agent">Agent status</a>
-          <a href="#" onClick={(e) => e.preventDefault()} title="v2 — Console preferences + domain editor">Settings</a>
-        </nav>
+        {view === 'tasks' && (
+          <>
+            <ProjectsSection
+              projects={projects.items}
+              tasksByProject={(() => {
+                const grouped = {};
+                for (const t of projectedTasks.items) {
+                  if (!t.projectId) continue;
+                  (grouped[t.projectId] = grouped[t.projectId] || []).push(t);
+                }
+                return grouped;
+              })()}
+              onMarkDone={markTaskDone}
+              loading={projects.loading || projectedTasks.loading}
+              error={projects.error || projectedTasks.error}
+            />
+
+            <Section icon="✅" title="Loose tasks (no project)" count={activeTasks.items.length}>
+              {activeTasks.loading && <div className="loading">Loading from UB Tasks…</div>}
+              {activeTasks.error && <div className="error">⚠ {activeTasks.error}</div>}
+              {!activeTasks.loading && !activeTasks.error && activeTasks.items.length === 0 && (
+                <div className="empty">
+                  <strong>Nothing loose.</strong> Every active task is attached to a project above.
+                </div>
+              )}
+              {!activeTasks.loading && !activeTasks.error && activeTasks.items.map((t) => (
+                <TaskListRow key={t.id} task={t} variant="active" />
+              ))}
+            </Section>
+          </>
+        )}
+
+        {view === 'capture' && (
+          <YourQueueSection
+            items={queue}
+            onCapture={capture}
+            onRoute={route}
+            onDismiss={dismiss}
+            onSend={sendThought}
+            destinations={DESTINATIONS}
+            onOpenSummary={openSummaryForQueueItem}
+          />
+        )}
+
+        {view === 'system' && (
+          <>
+            <div className="section">
+              <div className="section-header">
+                <span className="section-icon">📊</span>
+                <span className="section-title">System status</span>
+                <div className="section-divider" />
+              </div>
+              <div className="stat-grid">
+                <div className="stat">
+                  <div className="v gold">{needsBadge}</div>
+                  <div className="l">need you</div>
+                </div>
+                <div className="stat">
+                  <div className="v purple">{queueCount}</div>
+                  <div className="l">queue</div>
+                </div>
+                <div className="stat">
+                  <div className={`v ${staleAgentCount > 0 ? 'bad' : 'ok'}`}>{staleAgentCount}</div>
+                  <div className="l">stale agents</div>
+                </div>
+                <div className="stat">
+                  <div className="v ok">{lastReconShort}</div>
+                  <div className="l">last recon.</div>
+                </div>
+              </div>
+            </div>
+
+            <div className="section">
+              <div className="section-header">
+                <span className="section-icon">🎯</span>
+                <span className="section-title">{rocksLabel}</span>
+                {rocks.loading && <span className="mocked-tag">…</span>}
+                <div className="section-divider" />
+              </div>
+              {rocks.error && (
+                <div className="error">
+                  {rocks.error.includes('object_not_found') ? (
+                    <>
+                      ⚠ Company Rocks isn't shared with the Console integration yet.
+                      <br />
+                      <span style={{ fontSize: 12, opacity: 0.85 }}>
+                        Open Company Rocks in Notion → ⋯ → Connections → add <strong>STB Executive Console</strong>.
+                      </span>
+                    </>
+                  ) : (
+                    <>⚠ {rocks.error}</>
+                  )}
+                </div>
+              )}
+              <ul className="rocks-list">
+                {rockItems.map((r) => {
+                  const pct = typeof r.percentComplete === 'number'
+                    ? `${Math.round(r.percentComplete > 1 ? r.percentComplete : r.percentComplete * 100)}%`
+                    : null;
+                  const sub = [r.owner, pct].filter(Boolean).join(' · ');
+                  return (
+                    <li key={r.id} title={[r.status, r.quarter].filter(Boolean).join(' · ')}>
+                      <span className="emoji">{ROCK_STATUS_DOT[r.status] || '⚪'}</span>
+                      <span className="meta">
+                        {sub && <span className="dom">{sub}</span>}
+                        <span className="text">{r.rock}</span>
+                      </span>
+                    </li>
+                  );
+                })}
+                {!rocks.loading && !rocks.error && rockItems.length === 0 && (
+                  <li>
+                    <span className="meta">
+                      <span className="text" style={{ opacity: 0.7 }}>No Company Rocks defined yet.</span>
+                    </span>
+                  </li>
+                )}
+              </ul>
+            </div>
+
+            <div className="section">
+              <div className="section-header">
+                <span className="section-icon">🤝</span>
+                <span className="section-title">Agent freshness</span>
+                {freshness.loading && <span className="mocked-tag">…</span>}
+                <div className="section-divider" />
+              </div>
+              {freshness.error && <div className="error">⚠ {freshness.error}</div>}
+              <ul className="agents-list">
+                {freshness.items.map((a) => (
+                  <li key={a.agent} className={a.state}>
+                    <span className="ag">{a.agent}</span>
+                    <span className="ts" title={a.lastLoadedContext || ''}>{a.ts}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <div className={`info-section ${infoOpen ? 'open' : ''}`}>
+              <div className="info-header" onClick={() => setInfoOpen((s) => !s)}>
+                <span className="section-icon" style={{ fontSize: 14 }}>ℹ️</span>
+                <span className="info-title">
+                  Was you, now external — {externalCount} item{externalCount === 1 ? '' : 's'} waiting on providers
+                </span>
+                {externalHolds.loading && <span className="mocked-tag" title="Loading from Pending Work">…</span>}
+                <span className="section-chevron" style={{ marginLeft: 'auto' }}>
+                  {infoOpen ? '▲' : '▼'}
+                </span>
+              </div>
+              {infoOpen && (
+                <div className="info-list">
+                  {externalHolds.error && (
+                    <div className="info-row">
+                      <span className="error">
+                        {externalHolds.error.includes('object_not_found') ? (
+                          <>⚠ Pending Work isn't shared with the Console integration yet — open it in Notion → ⋯ → Connections → add STB Executive Console.</>
+                        ) : (
+                          <>⚠ {externalHolds.error}</>
+                        )}
+                      </span>
+                    </div>
+                  )}
+                  {!externalHolds.loading && !externalHolds.error && externalCount === 0 && (
+                    <div className="info-row">
+                      <span>Nothing waiting on outside parties.</span>
+                    </div>
+                  )}
+                  {externalHolds.items.map((i) => {
+                    const days = i.dateLogged
+                      ? Math.floor((Date.now() - new Date(i.dateLogged).getTime()) / 86_400_000)
+                      : null;
+                    return (
+                      <div key={i.id} className="info-row">
+                        <span>
+                          <a href={i.url} target="_blank" rel="noreferrer" style={{ color: 'inherit' }}>
+                            {i.title}
+                          </a>
+                          {i.workstream ? ` — ${i.workstream}` : ''}
+                        </span>
+                        <span className="external">
+                          awaiting external event{days !== null ? ` · ${days}d` : ''}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            <button
+              type="button"
+              className="reconcile"
+              onClick={onReconcile}
+              disabled={reconciling || reconcileTargets.length === 0}
+              title={reconcileTargets.length === 0 ? 'Nothing to reconcile' : `Acknowledge ${reconcileTargets.length} Code-queue item${reconcileTargets.length === 1 ? '' : 's'}`}
+            >
+              <div className="top">
+                <span className="bolt">⚡</span>
+                {reconciling ? 'Reconciling…' : 'Reconcile'}
+              </div>
+              <span className="sub">
+                {reconcileTargets.length > 0
+                  ? `${reconcileTargets.length} pending · push · pull · surface`
+                  : 'all clear'}
+              </span>
+            </button>
+          </>
+        )}
       </main>
 
       <SummaryOverlay
@@ -1047,8 +1183,6 @@ export default function App() {
         onClose={() => setOverlay({ open: false, payload: null })}
         payload={overlay.payload}
       />
-
-      <CaptureBar onCapture={capture} />
     </div>
   );
 }
