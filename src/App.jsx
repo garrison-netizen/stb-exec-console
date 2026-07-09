@@ -245,8 +245,10 @@ export default function App() {
       .catch((err) => setFreshness({ items: [], loading: false, error: err.message }));
   }
 
-  function reloadSourceNarratives() {
-    setSourceNarratives((s) => ({ ...s, loading: true, error: null }));
+  // Reload fns accept silent=true for background refreshes after an action:
+  // the loading flag stays down so the list never unmounts (keeps scroll).
+  function reloadSourceNarratives(silent = false) {
+    if (!silent) setSourceNarratives((s) => ({ ...s, loading: true, error: null }));
     fetch('/api/list?kind=source_narratives_needed&limit=25')
       .then((r) => r.json())
       .then((d) => {
@@ -256,8 +258,8 @@ export default function App() {
       .catch((err) => setSourceNarratives({ items: [], loading: false, error: err.message }));
   }
 
-  function reloadActiveTasks() {
-    setActiveTasks((s) => ({ ...s, loading: true, error: null }));
+  function reloadActiveTasks(silent = false) {
+    if (!silent) setActiveTasks((s) => ({ ...s, loading: true, error: null }));
     fetch('/api/list?kind=active_tasks&limit=100')
       .then((r) => r.json())
       .then((d) => {
@@ -267,8 +269,8 @@ export default function App() {
       .catch((err) => setActiveTasks({ items: [], loading: false, error: err.message }));
   }
 
-  function reloadHeldCaptures() {
-    setHeldCaptures((s) => ({ ...s, loading: true, error: null }));
+  function reloadHeldCaptures(silent = false) {
+    if (!silent) setHeldCaptures((s) => ({ ...s, loading: true, error: null }));
     fetch('/api/list?kind=held_for_garrison&limit=25')
       .then((r) => r.json())
       .then((d) => {
@@ -280,6 +282,7 @@ export default function App() {
 
   // Reclassify a Held capture → Pending promotion. Promoter picks up next pass.
   async function reclassifyHeld(item, captureType) {
+    setHeldCaptures((s) => ({ ...s, items: s.items.filter((c) => c.id !== item.id) }));
     try {
       const res = await fetch('/api/submit', {
         method: 'POST',
@@ -292,9 +295,10 @@ export default function App() {
       });
       const j = await res.json();
       if (!j.ok) throw new Error(j.error || 'reclassify failed');
-      reloadHeldCaptures();
     } catch (err) {
       alert(`Reclassify failed: ${err.message}`);
+    } finally {
+      reloadHeldCaptures(true);
     }
   }
 
@@ -309,8 +313,8 @@ export default function App() {
       .catch((err) => setProjects({ items: [], loading: false, error: err.message }));
   }
 
-  function reloadProjectedTasks() {
-    setProjectedTasks((s) => ({ ...s, loading: true, error: null }));
+  function reloadProjectedTasks(silent = false) {
+    if (!silent) setProjectedTasks((s) => ({ ...s, loading: true, error: null }));
     fetch('/api/list?kind=projected_active_tasks&limit=200')
       .then((r) => r.json())
       .then((d) => {
@@ -323,6 +327,10 @@ export default function App() {
   // Mark Done — straight write to UB Tasks (Status=Done, Completed=today).
   // ADR-005 §2 write boundary, ADR-006-formalize-write pending.
   async function markTaskDone(task) {
+    // Drop the row in place first; the silent refresh reconciles with Notion
+    // without blanking the list (a failure also restores the row via refresh).
+    setActiveTasks((s) => ({ ...s, items: s.items.filter((t) => t.id !== task.id) }));
+    setProjectedTasks((s) => ({ ...s, items: s.items.filter((t) => t.id !== task.id) }));
     try {
       const res = await fetch('/api/submit', {
         method: 'POST',
@@ -331,17 +339,18 @@ export default function App() {
       });
       const j = await res.json();
       if (!j.ok) throw new Error(j.error || 'mark done failed');
-      // Refresh both project-tasks (within projects) and loose active list.
-      reloadProjectedTasks();
-      reloadActiveTasks();
     } catch (err) {
       alert(`Mark done failed: ${err.message}`);
+    } finally {
+      reloadProjectedTasks(true);
+      reloadActiveTasks(true);
     }
   }
 
   // Drop a Held capture → Bounced with Garrison-attributed reason.
   async function discardHeld(item) {
     if (!confirm(`Drop this capture? It will not be promoted.\n\n"${(item.body || item.title || '').slice(0, 120)}"`)) return;
+    setHeldCaptures((s) => ({ ...s, items: s.items.filter((c) => c.id !== item.id) }));
     try {
       const res = await fetch('/api/submit', {
         method: 'POST',
@@ -353,9 +362,10 @@ export default function App() {
       });
       const j = await res.json();
       if (!j.ok) throw new Error(j.error || 'discard failed');
-      reloadHeldCaptures();
     } catch (err) {
       alert(`Drop failed: ${err.message}`);
+    } finally {
+      reloadHeldCaptures(true);
     }
   }
 
@@ -368,6 +378,7 @@ export default function App() {
 
   async function dropNarrative(item) {
     if (!confirm(`Drop the source-narrative request for "${item.title}"?\n\nThe Living Archive row stays; only the narrative ask is unflagged.`)) return;
+    setSourceNarratives((s) => ({ ...s, items: s.items.filter((n) => n.id !== item.id) }));
     try {
       const res = await fetch('/api/submit', {
         method: 'POST',
@@ -380,9 +391,10 @@ export default function App() {
       });
       const json = await res.json();
       if (!json.ok) throw new Error(json.error || 'unflag failed');
-      reloadSourceNarratives();
     } catch (err) {
       alert(`Failed to drop: ${err.message}`);
+    } finally {
+      reloadSourceNarratives(true);
     }
   }
 
@@ -995,6 +1007,32 @@ export default function App() {
                   <div className="v ok">{lastReconShort}</div>
                   <div className="l">last recon.</div>
                 </div>
+              </div>
+            </div>
+
+            <div className="section">
+              <div className="section-header">
+                <span className="section-icon">🧰</span>
+                <span className="section-title">STB apps</span>
+                <div className="section-divider" />
+              </div>
+              <div className="app-links">
+                <a className="app-link" href="https://stb-master-calendar.vercel.app" target="_blank" rel="noreferrer">
+                  <span className="app-link-emoji">📅</span>
+                  <span className="app-link-meta">
+                    <span className="app-link-name">Master Calendar</span>
+                    <span className="app-link-sub">company-wide events grid</span>
+                  </span>
+                  <span className="app-link-arrow">↗</span>
+                </a>
+                <a className="app-link" href="https://stb-private-event-calculator.vercel.app" target="_blank" rel="noreferrer">
+                  <span className="app-link-emoji">🧮</span>
+                  <span className="app-link-meta">
+                    <span className="app-link-name">Private Event Calculator</span>
+                    <span className="app-link-sub">quote a private event</span>
+                  </span>
+                  <span className="app-link-arrow">↗</span>
+                </a>
               </div>
             </div>
 
