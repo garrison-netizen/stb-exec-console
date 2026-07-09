@@ -258,7 +258,7 @@ export default function App() {
 
   function reloadActiveTasks() {
     setActiveTasks((s) => ({ ...s, loading: true, error: null }));
-    fetch('/api/list?kind=active_tasks&limit=25')
+    fetch('/api/list?kind=active_tasks&limit=100')
       .then((r) => r.json())
       .then((d) => {
         if (!d.ok) throw new Error(d.error || 'fetch failed');
@@ -952,7 +952,7 @@ export default function App() {
                 </div>
               )}
               {!activeTasks.loading && !activeTasks.error && activeTasks.items.map((t) => (
-                <TaskListRow key={t.id} task={t} variant="active" />
+                <TaskListRow key={t.id} task={t} variant="active" onMarkDone={markTaskDone} />
               ))}
             </Section>
           </>

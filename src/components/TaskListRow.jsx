@@ -29,9 +29,9 @@ export default function TaskListRow({ task, variant = 'active', onRelease, onMar
     onMarkDone?.(task);
   }
 
-  // Project variant: the status dot is an interactive checkbox that marks
-  // the Task Done in UB on click.
-  const dotEl = variant === 'project' && onMarkDone ? (
+  // Whenever a mark-done handler is provided (project AND loose tasks), the
+  // status dot is an interactive checkbox that marks the Task Done in UB.
+  const dotEl = onMarkDone ? (
     <button
       type="button"
       className="task-row-done-btn"
