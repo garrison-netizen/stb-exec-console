@@ -138,10 +138,6 @@ export default function App() {
   // reclassifies (Task/Note/Project) or drops them via Console.
   const [heldCaptures, setHeldCaptures] = useState({ items: [], loading: true, error: null });
 
-  // Draft Tasks — UB Tasks the Promoter created with the '🤖 Operator draft'
-  // label, awaiting Garrison's review. Release removes the label.
-  const [draftTasks, setDraftTasks] = useState({ items: [], loading: true, error: null });
-
   // Project-shape inbox per ADR-005 §2 — projects + their related tasks.
   const [projects, setProjects] = useState({ items: [], loading: true, error: null });
   const [projectedTasks, setProjectedTasks] = useState({ items: [], loading: true, error: null });
@@ -160,7 +156,6 @@ export default function App() {
     reloadSourceNarratives();
     reloadActiveTasks();
     reloadHeldCaptures();
-    reloadDraftTasks();
     reloadProjects();
     reloadProjectedTasks();
     reloadRocks();
@@ -303,17 +298,6 @@ export default function App() {
     }
   }
 
-  function reloadDraftTasks() {
-    setDraftTasks((s) => ({ ...s, loading: true, error: null }));
-    fetch('/api/list?kind=draft_tasks&limit=25')
-      .then((r) => r.json())
-      .then((d) => {
-        if (!d.ok) throw new Error(d.error || 'fetch failed');
-        setDraftTasks({ items: d.items || [], loading: false, error: null });
-      })
-      .catch((err) => setDraftTasks({ items: [], loading: false, error: err.message }));
-  }
-
   function reloadProjects() {
     setProjects((s) => ({ ...s, loading: true, error: null }));
     fetch('/api/list?kind=active_projects&limit=50')
@@ -352,22 +336,6 @@ export default function App() {
       reloadActiveTasks();
     } catch (err) {
       alert(`Mark done failed: ${err.message}`);
-    }
-  }
-
-  async function releaseDraft(item) {
-    try {
-      const res = await fetch('/api/submit', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ submissionType: 'release_draft_task', pageId: item.id }),
-      });
-      const j = await res.json();
-      if (!j.ok) throw new Error(j.error || 'release failed');
-      reloadDraftTasks();
-      reloadActiveTasks(); // released task moves into active list
-    } catch (err) {
-      alert(`Release failed: ${err.message}`);
     }
   }
 
@@ -708,11 +676,10 @@ export default function App() {
 
   // Per-tab badge counts.
   const heldCount = heldCaptures.items.length;
-  const draftCount = draftTasks.items.length;
-  const needsBadge = heldCount + draftCount + decisionCount + sourceCount;
+  const needsBadge = heldCount + decisionCount + sourceCount;
   const tasksBadge = activeTasks.items.length + projectedTasks.items.length;
   const needsLoading =
-    heldCaptures.loading || draftTasks.loading || decisions.loading || sourceNarratives.loading;
+    heldCaptures.loading || decisions.loading || sourceNarratives.loading;
 
   const TABS = [
     { key: 'needs', icon: '✋', label: 'Needs You', badge: needsBadge, hot: needsBadge > 0 },
@@ -757,7 +724,7 @@ export default function App() {
             <div className="hero-strip">
               <h2>Waiting on your call: <span className="n">{needsBadge}</span></h2>
               <span className="sub">
-                {heldCount} held · {draftCount} draft{draftCount === 1 ? '' : 's'} · {decisionCount} decision{decisionCount === 1 ? '' : 's'} · {sourceCount} narrative{sourceCount === 1 ? '' : 's'}
+                {heldCount} held · {decisionCount} decision{decisionCount === 1 ? '' : 's'} · {sourceCount} narrative{sourceCount === 1 ? '' : 's'}
               </span>
             </div>
 
@@ -826,15 +793,6 @@ export default function App() {
                     />
                   );
                 })}
-              </Section>
-            )}
-
-            {(draftTasks.items.length > 0 || draftTasks.error) && (
-              <Section icon="🤖" title="Operator drafts awaiting release" count={draftTasks.items.length} countTone="gold">
-                {draftTasks.error && <div className="error">⚠ {draftTasks.error}</div>}
-                {!draftTasks.error && draftTasks.items.map((t) => (
-                  <TaskListRow key={t.id} task={t} variant="draft" onRelease={releaseDraft} />
-                ))}
               </Section>
             )}
 
