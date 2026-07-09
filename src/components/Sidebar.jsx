@@ -1,15 +1,25 @@
-import { MOCK_ROCKS, DOMAINS, MOCK_AGENT_FRESHNESS } from '../state/mockData.js';
+import { DOMAINS, MOCK_AGENT_FRESHNESS } from '../state/mockData.js';
+
+// Rock status → dot glyph. Company Rocks DB is the single shared Rocks
+// surface (Architect 2026-05-28); the strip is Tier-filtered server-side.
+const ROCK_STATUS_DOT = {
+  'On Track': '🟢',
+  'Off Track': '🔴',
+  Done: '✅',
+  'Not Started': '⚪',
+};
 
 // Persistent left sidebar — the visibility layer Garrison wants Reconcile to
 // anchor against. Brand → Rocks → Focus filter → System Status → Agent
 // Freshness → Reconcile button (anchored bottom).
 //
-// Rocks is still MOCK (per-department surfaces pending Architect's Dashboard
-// mapping). Agent Freshness reads Agent Status DB live as of 2026-05-28.
+// Rocks reads Company Rocks live as of 2026-07-09. Agent Freshness reads
+// Agent Status DB live as of 2026-05-28.
 export default function Sidebar({
   activeDomain,
   onDomainChange,
   status, // { needYou, queueCount, staleCount, lastReconciled }
+  rocks, // { items: [{rock,status,quarter,owner,percentComplete}], loading, error }
   freshness, // { items: [{agent,lastLoaded,lastLoadedContext,state,ts}], loading, error }
   onReconcile,
   reconciling,
@@ -19,6 +29,12 @@ export default function Sidebar({
   const freshnessLoading = freshness?.loading;
   const freshnessError = freshness?.error;
   const showMock = !freshnessRows.length && !freshnessLoading;
+
+  const rockItems = rocks?.items || [];
+  const rocksLoading = rocks?.loading;
+  const rocksError = rocks?.error || '';
+  const rockQuarters = [...new Set(rockItems.map((r) => r.quarter).filter(Boolean))];
+  const rocksLabel = rockQuarters.length === 1 ? `${rockQuarters[0]} Rocks` : 'Rocks';
   return (
     <aside className="side">
       <div className="brand">
@@ -32,19 +48,49 @@ export default function Sidebar({
 
       <div>
         <div className="panel-head">
-          <span className="icon">🎯</span>Q2 Rocks
-          <span className="mocked-tag" style={{ marginLeft: 'auto' }} title="Mock — DB structure pending Architect">mock</span>
+          <span className="icon">🎯</span>{rocksLabel}
+          {rocksLoading && (
+            <span className="mocked-tag" style={{ marginLeft: 'auto' }} title="Loading from Company Rocks">…</span>
+          )}
         </div>
+        {rocksError && (
+          <div className="error" style={{ fontSize: 11 }}>
+            {rocksError.includes('object_not_found') ? (
+              <>
+                ⚠ Company Rocks isn't shared with the Console integration yet.
+                <br />
+                <span style={{ fontSize: 10, opacity: 0.85 }}>
+                  Open Company Rocks in Notion → ⋯ → Connections → add <strong>STB Executive Console</strong>.
+                </span>
+              </>
+            ) : (
+              <>⚠ {rocksError}</>
+            )}
+          </div>
+        )}
         <ul className="rocks-list">
-          {MOCK_ROCKS.map((r) => (
-            <li key={r.id}>
-              <span className="emoji">{r.emoji}</span>
+          {rockItems.map((r) => {
+            const pct = typeof r.percentComplete === 'number'
+              ? `${Math.round(r.percentComplete > 1 ? r.percentComplete : r.percentComplete * 100)}%`
+              : null;
+            const sub = [r.owner, pct].filter(Boolean).join(' · ');
+            return (
+              <li key={r.id} title={[r.status, r.quarter].filter(Boolean).join(' · ')}>
+                <span className="emoji">{ROCK_STATUS_DOT[r.status] || '⚪'}</span>
+                <span className="meta">
+                  {sub && <span className="dom">{sub}</span>}
+                  <span className="text">{r.rock}</span>
+                </span>
+              </li>
+            );
+          })}
+          {!rocksLoading && !rocksError && rockItems.length === 0 && (
+            <li>
               <span className="meta">
-                <span className="dom">{r.domain}</span>
-                <span className="text">{r.text}</span>
+                <span className="text" style={{ opacity: 0.7 }}>No Company Rocks defined yet.</span>
               </span>
             </li>
-          ))}
+          )}
         </ul>
       </div>
 

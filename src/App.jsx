@@ -15,10 +15,6 @@ import {
   dismissThought,
   relativeAge,
 } from './state/queue.js';
-import {
-  MOCK_DECISIONS,
-  MOCK_INFO_EXTERNAL,
-} from './state/mockData.js';
 
 // Source Narrative Intake page — Architect's pointer for "tell the story".
 const SOURCE_NARRATIVE_INTAKE_URL = 'https://www.notion.so/3651c57ac02b810eb1b4f724dec7c99d';
@@ -144,6 +140,12 @@ export default function App() {
   const [projects, setProjects] = useState({ items: [], loading: true, error: null });
   const [projectedTasks, setProjectedTasks] = useState({ items: [], loading: true, error: null });
 
+  // De-mock wiring 2026-07-09 — the last four surfaces reading placeholder data.
+  const [rocks, setRocks] = useState({ items: [], loading: true, error: null });
+  const [decisions, setDecisions] = useState({ items: [], loading: true, error: null });
+  const [externalHolds, setExternalHolds] = useState({ items: [], loading: true, error: null });
+  const [lastRecon, setLastRecon] = useState({ when: null, loading: true });
+
   // Load channel items where Code is the recipient + status Unread (matches
   // the doctrinal narrow filter shipped earlier today).
   useEffect(() => {
@@ -155,7 +157,60 @@ export default function App() {
     reloadDraftTasks();
     reloadProjects();
     reloadProjectedTasks();
+    reloadRocks();
+    reloadDecisions();
+    reloadExternalHolds();
+    reloadLastRecon();
   }, []);
+
+  function reloadRocks() {
+    setRocks((s) => ({ ...s, loading: true, error: null }));
+    fetch('/api/list?kind=company_rocks&limit=12')
+      .then((r) => r.json())
+      .then((d) => {
+        if (!d.ok) throw new Error(d.error || 'fetch failed');
+        setRocks({ items: d.items || [], loading: false, error: null });
+      })
+      .catch((err) => setRocks({ items: [], loading: false, error: err.message }));
+  }
+
+  function reloadDecisions() {
+    setDecisions((s) => ({ ...s, loading: true, error: null }));
+    fetch('/api/list?kind=decisions_pending&limit=25')
+      .then((r) => r.json())
+      .then((d) => {
+        if (!d.ok) throw new Error(d.error || 'fetch failed');
+        // Ready (needs Garrison now) first, then Pending input, then Forming;
+        // oldest first within each band.
+        const rank = { Ready: 0, 'Pending input': 1, Forming: 2 };
+        const items = (d.items || []).sort(
+          (a, b) => (rank[a.status] ?? 9) - (rank[b.status] ?? 9)
+        );
+        setDecisions({ items, loading: false, error: null });
+      })
+      .catch((err) => setDecisions({ items: [], loading: false, error: err.message }));
+  }
+
+  function reloadExternalHolds() {
+    setExternalHolds((s) => ({ ...s, loading: true, error: null }));
+    fetch('/api/list?kind=external_holds&limit=25')
+      .then((r) => r.json())
+      .then((d) => {
+        if (!d.ok) throw new Error(d.error || 'fetch failed');
+        setExternalHolds({ items: d.items || [], loading: false, error: null });
+      })
+      .catch((err) => setExternalHolds({ items: [], loading: false, error: err.message }));
+  }
+
+  function reloadLastRecon() {
+    fetch('/api/list?kind=recent_reconciles&limit=1')
+      .then((r) => r.json())
+      .then((d) => {
+        if (!d.ok) throw new Error(d.error || 'fetch failed');
+        setLastRecon({ when: d.items?.[0]?.when || null, loading: false });
+      })
+      .catch(() => setLastRecon({ when: null, loading: false }));
+  }
 
   function reloadReconcileTargets() {
     fetch('/api/list?kind=channel_recent&limit=25')
@@ -466,23 +521,30 @@ export default function App() {
     });
   }
 
-  function openSummaryForMock(item, sectionTag) {
+  // Decisions are Brain content — Architect-owned writes — so the overlay is
+  // read-and-jump only: full context here, resolution happens in Notion.
+  function openSummaryForDecision(item) {
     setOverlay({
       open: true,
       payload: {
-        sectionTag,
-        title: item.title,
+        sectionTag: '⚖️ Decision pending your call',
+        title: item.decision,
         meta: {
-          ...(item.destination && { Destination: item.destination }),
-          ...(item.by && { Author: item.by }),
-          ...(item.age && {
-            Age: item.ageState === 'stale' ? `<span class="age-stale">${item.age}</span>` : item.age,
-          }),
-          ...(item.note && { Note: item.note }),
+          Status: item.status,
+          ...(item.dateLogged && { Logged: item.dateLogged }),
+          ...(item.targetResolution && { 'Target resolution': item.targetResolution }),
         },
-        summary:
-          '<em>This item is currently mocked. Real data wiring is pending Architect schema work — see the project memory file for which schema additions are owed.</em>',
-        actions: [{ kind: 'ghost', label: 'Close' }],
+        summary: item.context
+          ? escapeHtml(item.context)
+          : '<em>No context written on this decision yet.</em>',
+        actions: [
+          {
+            kind: 'primary',
+            label: 'Open in Notion ↗',
+            onClick: () => window.open(item.url, '_blank', 'noopener,noreferrer'),
+          },
+          { kind: 'ghost', label: 'Close' },
+        ],
       },
     });
   }
@@ -622,17 +684,21 @@ export default function App() {
     });
 
     reloadReconcileTargets();
+    reloadLastRecon();
     setReconciling(false);
   }
 
   // Counts
   const queueCount = queue.length;
   const sourceCount = sourceNarratives.items.length;
-  const decisionCount = MOCK_DECISIONS.length;
-  const externalCount = MOCK_INFO_EXTERNAL.length;
+  const decisionCount = decisions.items.length;
+  const externalCount = externalHolds.items.length;
   const totalNeedsYou = queueCount + sourceCount + decisionCount;
   // Real stale agent count from Agent Status DB (state !== 'ok').
   const staleAgentCount = freshness.items.filter((a) => a.state !== 'ok').length;
+  // Real "last recon." from the newest Reconciliation Log row.
+  const lastReconShort = lastRecon.loading ? '…' : lastRecon.when ? relAgeShort(lastRecon.when) : 'never';
+  const lastReconLabel = lastRecon.loading ? '…' : lastRecon.when ? `${relAgeShort(lastRecon.when)} ago` : 'never';
 
   return (
     <div className="grid">
@@ -643,8 +709,9 @@ export default function App() {
           needYou: totalNeedsYou,
           queueCount,
           staleCount: staleAgentCount,
-          lastReconciled: '3d', // mocked; surfacing from Reconciliation Log lands as a v2.4 polish
+          lastReconciled: lastReconShort,
         }}
+        rocks={rocks}
         freshness={freshness}
         onReconcile={onReconcile}
         reconciling={reconciling}
@@ -658,7 +725,7 @@ export default function App() {
           sourceCount={sourceCount}
           decisionCount={decisionCount}
           externalCount={externalCount}
-          lastReconciled="3d ago"
+          lastReconciled={lastReconLabel}
         />
 
         {(heldCaptures.items.length > 0 || heldCaptures.loading || heldCaptures.error) && (
@@ -861,53 +928,59 @@ export default function App() {
           })}
         </Section>
 
-        <Section icon="⚖️" title="Decisions pending your call" count={decisionCount} mocked>
-          {MOCK_DECISIONS.map((it) => (
-            <Item
-              key={it.id}
-              urgency={it.urgency}
-              extraClass={it.domainTone === 'stb' && it.domainLabel?.includes('System') ? 'dom-system' : 'dom-brewery'}
-              title={it.title}
-              summaryId={it.id}
-              onOpenSummary={() => openSummaryForMock(it, '⚖️ Decision pending your call')}
-              meta={
-                <>
-                  {it.domainLabel && (
-                    <span className={`domain-badge ${it.domainTone || 'stb'}`}>{it.domainLabel}</span>
-                  )}
-                  <span>{it.by}</span>
-                  {it.posted && (
-                    <>
-                      <span className="sep">·</span>
-                      <span>{it.posted}</span>
-                    </>
-                  )}
-                  {it.note && (
-                    <>
-                      <span className="sep">·</span>
-                      <span className={it.ageState ? `age ${it.ageState}` : undefined}>{it.note}</span>
-                    </>
-                  )}
-                  {it.age && !it.note && (
-                    <>
-                      <span className="sep">·</span>
-                      <span className={`age ${it.ageState || ''}`}>{it.age}</span>
-                    </>
-                  )}
-                </>
-              }
-              actions={
-                <>
-                  <button type="button" className="btn primary">Approve</button>
-                  <button type="button" className="btn secondary">Modify</button>
-                  <button type="button" className="btn danger">Reject</button>
-                  <button type="button" className="btn ghost">
-                    Open <span className="btn-arrow">↗</span>
-                  </button>
-                </>
-              }
-            />
-          ))}
+        <Section icon="⚖️" title="Decisions pending your call" count={decisionCount}>
+          {decisions.loading && <div className="loading">Loading from Decision Pipeline…</div>}
+          {decisions.error && <div className="error">⚠ {decisions.error}</div>}
+          {!decisions.loading && !decisions.error && decisionCount === 0 && (
+            <div className="empty">
+              <strong>No decisions in formation.</strong> Rows land here from the Brain's
+              Decision Pipeline when a decision is Forming, Pending input, or Ready for your call.
+            </div>
+          )}
+          {!decisions.loading && !decisions.error && decisions.items.map((it) => {
+            const ageDays = it.dateLogged
+              ? Math.floor((Date.now() - new Date(it.dateLogged).getTime()) / 86_400_000)
+              : null;
+            return (
+              <Item
+                key={it.id}
+                urgency={it.status === 'Ready' ? 'urgent' : it.status === 'Pending input' ? 'medium' : undefined}
+                extraClass="dom-system"
+                title={it.decision}
+                summaryId={it.id}
+                onOpenSummary={() => openSummaryForDecision(it)}
+                meta={
+                  <>
+                    <span className="domain-badge stb">{it.status}</span>
+                    {ageDays !== null && (
+                      <>
+                        <span className="sep">·</span>
+                        <span className={`age ${ageDays > 14 ? 'stale' : ''}`}>
+                          {ageDays === 0 ? 'logged today' : `in pipeline ${ageDays}d`}
+                        </span>
+                      </>
+                    )}
+                    {it.targetResolution && (
+                      <>
+                        <span className="sep">·</span>
+                        <span>target {it.targetResolution}</span>
+                      </>
+                    )}
+                  </>
+                }
+                actions={
+                  <>
+                    <button type="button" className="btn primary" onClick={() => openSummaryForDecision(it)}>
+                      Context
+                    </button>
+                    <a className="btn ghost" href={it.url} target="_blank" rel="noreferrer">
+                      Open in Notion <span className="btn-arrow">↗</span>
+                    </a>
+                  </>
+                }
+              />
+            );
+          })}
         </Section>
 
         <div className={`info-section ${infoOpen ? 'open' : ''}`}>
@@ -916,19 +989,47 @@ export default function App() {
             <span className="info-title">
               Was you, now external — {externalCount} item{externalCount === 1 ? '' : 's'} waiting on providers
             </span>
-            <span className="mocked-tag" title="Mock — query against Pending Work pending">mock</span>
+            {externalHolds.loading && <span className="mocked-tag" title="Loading from Pending Work">…</span>}
             <span className="section-chevron" style={{ marginLeft: 'auto' }}>
               {infoOpen ? '▲' : '▼'}
             </span>
           </div>
           {infoOpen && (
             <div className="info-list">
-              {MOCK_INFO_EXTERNAL.map((i) => (
-                <div key={i.id} className="info-row">
-                  <span>{i.text}</span>
-                  <span className="external">{i.external}</span>
+              {externalHolds.error && (
+                <div className="info-row">
+                  <span className="error">
+                    {externalHolds.error.includes('object_not_found') ? (
+                      <>⚠ Pending Work isn't shared with the Console integration yet — open it in Notion → ⋯ → Connections → add STB Executive Console.</>
+                    ) : (
+                      <>⚠ {externalHolds.error}</>
+                    )}
+                  </span>
                 </div>
-              ))}
+              )}
+              {!externalHolds.loading && !externalHolds.error && externalCount === 0 && (
+                <div className="info-row">
+                  <span>Nothing waiting on outside parties.</span>
+                </div>
+              )}
+              {externalHolds.items.map((i) => {
+                const days = i.dateLogged
+                  ? Math.floor((Date.now() - new Date(i.dateLogged).getTime()) / 86_400_000)
+                  : null;
+                return (
+                  <div key={i.id} className="info-row">
+                    <span>
+                      <a href={i.url} target="_blank" rel="noreferrer" style={{ color: 'inherit' }}>
+                        {i.title}
+                      </a>
+                      {i.workstream ? ` — ${i.workstream}` : ''}
+                    </span>
+                    <span className="external">
+                      awaiting external event{days !== null ? ` · ${days}d` : ''}
+                    </span>
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>
