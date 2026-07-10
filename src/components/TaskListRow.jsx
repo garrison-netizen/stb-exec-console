@@ -8,7 +8,7 @@
 //                    UB Tasks per ADR-005 §2) + open. Used inside Projects
 //                    section rows.
 //          'draft'   renders 🤖 marker + Release primary action.
-export default function TaskListRow({ task, variant = 'active', onRelease, onMarkDone }) {
+export default function TaskListRow({ task, variant = 'active', onRelease, onMarkDone, onEdit }) {
   const today = new Date().toISOString().slice(0, 10);
   const isOverdue = task.due && task.due < today;
   const isToday = task.due === today;
@@ -89,6 +89,17 @@ export default function TaskListRow({ task, variant = 'active', onRelease, onMar
           title="Release this draft into your active task list"
         >
           Release
+        </button>
+      )}
+      {onEdit && (
+        <button
+          type="button"
+          className="task-row-edit"
+          onClick={(e) => { e.stopPropagation(); onEdit(task); }}
+          title="Edit task"
+          aria-label="Edit task"
+        >
+          ✎
         </button>
       )}
       <a

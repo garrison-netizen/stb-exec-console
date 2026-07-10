@@ -9,7 +9,7 @@ import TaskListRow from './TaskListRow.jsx';
 //
 // Projects collapsed by default (chevron toggles). On mount, project with
 // most tasks expanded by default so the surface feels alive on first paint.
-export default function ProjectsSection({ projects, tasksByProject, onMarkDone, loading, error }) {
+export default function ProjectsSection({ projects, tasksByProject, onMarkDone, onEditTask, loading, error }) {
   // Track which projects are expanded. On first data arrival, expand the
   // top 3 by task count so the surface shows real work without a click.
   // After that, manual toggle is sticky.
@@ -107,7 +107,7 @@ export default function ProjectsSection({ projects, tasksByProject, onMarkDone, 
                     <div className="project-empty">No active tasks under this project.</div>
                   ) : (
                     tasks.map((t) => (
-                      <TaskListRow key={t.id} task={t} variant="project" onMarkDone={onMarkDone} />
+                      <TaskListRow key={t.id} task={t} variant="project" onMarkDone={onMarkDone} onEdit={onEditTask} />
                     ))
                   )}
                 </div>

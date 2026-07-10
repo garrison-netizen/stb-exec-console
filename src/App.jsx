@@ -5,6 +5,7 @@ import YourQueueSection from './components/YourQueueSection.jsx';
 import TaskListRow from './components/TaskListRow.jsx';
 import ProjectsSection from './components/ProjectsSection.jsx';
 import SummaryOverlay from './components/SummaryOverlay.jsx';
+import TaskEditor from './components/TaskEditor.jsx';
 import {
   loadQueue,
   addThought,
@@ -141,6 +142,9 @@ export default function App() {
   // Project-shape inbox per ADR-005 §2 — projects + their related tasks.
   const [projects, setProjects] = useState({ items: [], loading: true, error: null });
   const [projectedTasks, setProjectedTasks] = useState({ items: [], loading: true, error: null });
+
+  // Add/edit modal for UB Tasks (2026-07-10). task=null → create mode.
+  const [taskEditor, setTaskEditor] = useState({ open: false, task: null, saving: false });
 
   // De-mock wiring 2026-07-09 — the last four surfaces reading placeholder data.
   const [rocks, setRocks] = useState({ items: [], loading: true, error: null });
@@ -344,6 +348,35 @@ export default function App() {
     } finally {
       reloadProjectedTasks(true);
       reloadActiveTasks(true);
+    }
+  }
+
+  function openTaskEditor(task = null) {
+    setTaskEditor({ open: true, task, saving: false });
+  }
+
+  async function saveTask(fields) {
+    const editing = taskEditor.task;
+    setTaskEditor((s) => ({ ...s, saving: true }));
+    try {
+      const res = await fetch('/api/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(
+          editing
+            ? { submissionType: 'update_task', pageId: editing.id, ...fields }
+            : { submissionType: 'create_task', ...fields }
+        ),
+      });
+      const j = await res.json();
+      if (!j.ok) throw new Error(j.error || 'save failed');
+      setTaskEditor({ open: false, task: null, saving: false });
+    } catch (err) {
+      alert(`Save failed: ${err.message}`);
+      setTaskEditor((s) => ({ ...s, saving: false }));
+    } finally {
+      reloadActiveTasks(true);
+      reloadProjectedTasks(true);
     }
   }
 
@@ -940,6 +973,12 @@ export default function App() {
 
         {view === 'tasks' && (
           <>
+            <div className="view-actions">
+              <button type="button" className="btn primary" onClick={() => openTaskEditor(null)}>
+                ＋ New task
+              </button>
+            </div>
+
             <ProjectsSection
               projects={projects.items}
               tasksByProject={(() => {
@@ -951,6 +990,7 @@ export default function App() {
                 return grouped;
               })()}
               onMarkDone={markTaskDone}
+              onEditTask={openTaskEditor}
               loading={projects.loading || projectedTasks.loading}
               error={projects.error || projectedTasks.error}
             />
@@ -964,7 +1004,7 @@ export default function App() {
                 </div>
               )}
               {!activeTasks.loading && !activeTasks.error && activeTasks.items.map((t) => (
-                <TaskListRow key={t.id} task={t} variant="active" onMarkDone={markTaskDone} />
+                <TaskListRow key={t.id} task={t} variant="active" onMarkDone={markTaskDone} onEdit={openTaskEditor} />
               ))}
             </Section>
           </>
@@ -1178,6 +1218,15 @@ export default function App() {
         open={overlay.open}
         onClose={() => setOverlay({ open: false, payload: null })}
         payload={overlay.payload}
+      />
+
+      <TaskEditor
+        open={taskEditor.open}
+        task={taskEditor.task}
+        projects={projects.items}
+        saving={taskEditor.saving}
+        onSave={saveTask}
+        onClose={() => setTaskEditor({ open: false, task: null, saving: false })}
       />
     </div>
   );

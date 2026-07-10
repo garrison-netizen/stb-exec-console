@@ -688,6 +688,48 @@ body {
   background: var(--navy-50);
 }
 
+/* ---- Task editor (add/edit modal) ---- */
+.view-actions { display: flex; justify-content: flex-end; margin: 0 2px 12px; }
+.editor-form { padding: 16px 18px; display: flex; flex-direction: column; gap: 13px; }
+.field { display: flex; flex-direction: column; gap: 5px; flex: 1; min-width: 0; }
+.field-label {
+  font-family: var(--font-display);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--navy-800);
+}
+.field-input {
+  font: inherit;
+  font-size: 14px;
+  padding: 9px 12px;
+  border-radius: 9px;
+  border: 1px solid var(--navy-200);
+  background: #fff;
+  color: var(--ink);
+  outline: none;
+  width: 100%;
+  transition: border-color 0.12s, box-shadow 0.12s;
+}
+.field-input:focus {
+  border-color: var(--brass-500);
+  box-shadow: 0 0 0 3px rgba(201, 163, 92, 0.25);
+}
+.field-row { display: flex; gap: 12px; }
+
+.task-row-edit {
+  font: inherit;
+  font-size: 13px;
+  background: none;
+  border: none;
+  color: var(--navy-200);
+  cursor: pointer;
+  flex: none;
+  padding: 2px 4px;
+}
+.task-row-edit:hover { color: var(--brass-600); }
+
 /* ---- Reconcile overlay item list ---- */
 .reconcile-list { list-style: none; display: flex; flex-direction: column; gap: 9px; }
 .reconcile-list li { font-size: 13px; line-height: 1.45; }
