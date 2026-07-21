@@ -43,6 +43,7 @@ export default function Shell() {
     return (
       <div className="signin-screen">
         <div className="signin-card">
+          <img src="/logo-mark.png" alt="Spindletap Beverages" className="signin-logo" />
           <h1>STB App</h1>
           <p className="signin-deny">{error}</p>
           <button className="shell-signout" onClick={signOut}>
