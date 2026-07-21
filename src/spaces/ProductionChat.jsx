@@ -227,11 +227,22 @@ export default function ProductionChat() {
             ☰
           </button>
           <div>
-            <h1>Production Assistant</h1>
+            <div className="prodchat-title-row">
+              <h1>Production Assistant</h1>
+              {dataAsOf && (
+                <span className="prodchat-fresh" title="When the Ekos data snapshot was last refreshed">
+                  Data updated{' '}
+                  {new Date(dataAsOf).toLocaleString(undefined, {
+                    month: 'short',
+                    day: 'numeric',
+                    hour: 'numeric',
+                    minute: '2-digit',
+                  })}
+                </span>
+              )}
+            </div>
             <p className="prodchat-sub">
-              Ask about inventory, batches, yields, losses, purchasing, and sales —
-              answers come straight from Ekos data.
-              {dataAsOf ? ` Data as of ${String(dataAsOf).slice(0, 16).replace('T', ' ')} UTC.` : ''}
+              Inventory, batches, yields, losses, purchasing, and sales — straight from Ekos.
             </p>
           </div>
         </header>
