@@ -160,7 +160,18 @@ export default function ProductionChat() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ messages: convo.messages }),
       })
-      const data = await res.json()
+      // The platform can answer with plain text (timeouts, gateway errors) —
+      // never assume JSON, and translate those cases into human language.
+      const raw = await res.text()
+      let data = null
+      try {
+        data = JSON.parse(raw)
+      } catch {
+        if (res.status === 504 || /timeout/i.test(raw)) {
+          throw new Error('That question needed more time than the server allows. Try breaking it into smaller pieces.')
+        }
+        throw new Error(`The server had a hiccup (${res.status}). Please try again.`)
+      }
       if (!res.ok || !data.ok) throw new Error(data.error || 'Something went wrong')
       convo.messages = [...convo.messages, { role: 'assistant', content: data.reply }].slice(-MAX_MESSAGES)
       if (data.dataAsOf) setDataAsOf(data.dataAsOf)
