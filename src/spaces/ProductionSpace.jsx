@@ -28,7 +28,6 @@ export default function ProductionSpace() {
     <div className="dept">
       <header className="dept-banner">
         <h1>Production Dashboard</h1>
-        <span className="dept-banner-sub">Spindletap Beverages · Production</span>
       </header>
       <div className="dept-eos">
         {EOS_PANELS.map((p) => (

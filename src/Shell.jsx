@@ -71,15 +71,17 @@ export default function Shell() {
           even for single-space users like a department head. */}
       <nav className="shell-nav">
         <img src="/logo-mark.png" alt="Spindletap Beverages" className="shell-logo" />
-          {available.map((s) => (
-            <button
-              key={s.key}
-              className={'shell-tab' + (current && current.key === s.key ? ' active' : '')}
-              onClick={() => setActive(s.key)}
-            >
-              {s.label}
-            </button>
-          ))}
+          {/* A single-space user needs no tab — the space banner names the room. */}
+          {available.length > 1 &&
+            available.map((s) => (
+              <button
+                key={s.key}
+                className={'shell-tab' + (current && current.key === s.key ? ' active' : '')}
+                onClick={() => setActive(s.key)}
+              >
+                {s.label}
+              </button>
+            ))}
           {LINKS.map((l) => (
             <a key={l.label} className="shell-tab shell-link" href={l.href} target="_blank" rel="noreferrer">
               {l.label} ↗
