@@ -87,6 +87,20 @@ export function notionDevPlugin() {
         }
       });
 
+      // Events space dashboard — same core as api/events.js in production.
+      server.middlewares.use('/api/events', async (req, res, next) => {
+        if (req.method !== 'GET') return next();
+        try {
+          const url = new URL(req.url, 'http://localhost');
+          const { eventsDashboard } = await import('./lib/eventsCore.js');
+          const model = await eventsDashboard({ force: url.searchParams.get('refresh') === '1' });
+          sendJson(res, 200, { ok: true, ...model });
+        } catch (err) {
+          console.error('[dev /api/events] error:', err.message);
+          sendJson(res, 500, { ok: false, error: err.message });
+        }
+      });
+
       server.middlewares.use('/api/health', (req, res, next) => {
         if (req.method !== 'GET') return next();
         sendJson(res, 200, {
