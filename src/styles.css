@@ -1096,3 +1096,21 @@ body {
   .dept-eos { grid-template-columns: 1fr; gap: 8px; padding: 10px 12px; }
   .dept-eos-note { display: none; }
 }
+
+/* ---- Assistant message interior spacing (global reset strips list indents) ---- */
+.prodchat-msg.assistant { padding: 16px 22px; }
+.prodchat-msg.assistant ul,
+.prodchat-msg.assistant ol { margin: 8px 0 10px; padding-left: 24px; }
+.prodchat-msg.assistant li { margin: 4px 0; line-height: 1.55; }
+.prodchat-msg.assistant li > ul,
+.prodchat-msg.assistant li > ol { margin: 4px 0; }
+.prodchat-msg.assistant h1,
+.prodchat-msg.assistant h2,
+.prodchat-msg.assistant h3 { font-size: 14.5px; margin: 12px 0 6px; color: var(--navy-900); }
+.prodchat-msg.assistant hr { border: none; border-top: 1px solid var(--line); margin: 10px 0; }
+.prodchat-msg.assistant blockquote {
+  border-left: 3px solid var(--brass-300);
+  padding-left: 12px;
+  margin: 8px 0;
+  color: var(--muted);
+}
