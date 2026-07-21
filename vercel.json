@@ -10,6 +10,10 @@
     },
     "api/mirror-upload.js": {
       "maxDuration": 60
+    },
+    "api/production.js": {
+      "maxDuration": 60,
+      "includeFiles": "node_modules/sql.js/dist/sql-wasm.wasm"
     }
   }
 }

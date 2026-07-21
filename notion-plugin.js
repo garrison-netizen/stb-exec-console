@@ -87,6 +87,20 @@ export function notionDevPlugin() {
         }
       });
 
+      // Production space dashboard — same core as api/production.js in production.
+      server.middlewares.use('/api/production', async (req, res, next) => {
+        if (req.method !== 'GET') return next();
+        try {
+          const { productionDashboard } = await import('./lib/productionDashCore.js');
+          const model = await productionDashboard();
+          sendJson(res, 200, { ok: true, ...model });
+        } catch (err) {
+          const msg = (err && err.message) || String(err);
+          console.error('[dev /api/production] error:', msg);
+          sendJson(res, (err && err.status) || 500, { ok: false, error: msg });
+        }
+      });
+
       // Events space chatbot — same engine as api/events-chat.js in production.
       server.middlewares.use('/api/events-chat', async (req, res, next) => {
         if (req.method !== 'POST') return next();
