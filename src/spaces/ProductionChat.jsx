@@ -8,14 +8,43 @@ import { apiFetch, currentEmail } from '../Auth.jsx'
 // browser (localStorage keyed by the signed-in email) — nothing chat-related
 // is stored server-side.
 
-const STARTERS = [
+// Pool of starter questions; each fresh conversation deals a random six so
+// the welcome screen stays lively and teaches the bot's range over time.
+const STARTER_POOL = [
+  // Inventory
   'What finished beer is on hand right now?',
-  'Top sellers this year by revenue?',
-  'What did we lose to breakage and spoilage this quarter, in dollars?',
+  'What inventory is expiring in the next 60 days?',
+  'What is our total inventory value by category?',
+  'What is sitting in WIP right now?',
+  'How much packaging inventory do we have on hand?',
+  // Production
   'Which batches are in progress?',
-  'What POs are still open and when do they land?',
+  'What did we finish brewing last month?',
   'How does Houston Haze production this year compare to last?',
+  'How have yields trended on Heavy Hands batches?',
+  'How many barrels have we produced this year?',
+  // Losses
+  'What did we lose to breakage and spoilage this quarter, in dollars?',
+  'How are losses trending month by month this year?',
+  'Which items have we destroyed or written off most this year?',
+  // Purchasing
+  'What POs are still open and when do they land?',
+  'How have hop prices trended over the last two years?',
+  'Who are our top vendors by spend this year?',
+  // Sales out the door
+  'Top sellers this year by revenue?',
+  'How do taproom sales compare to wholesale this year?',
+  'How is the coffee line performing this year?',
 ]
+
+function dealStarters() {
+  const pool = [...STARTER_POOL]
+  const hand = []
+  while (hand.length < 6 && pool.length) {
+    hand.push(pool.splice(Math.floor(Math.random() * pool.length), 1)[0])
+  }
+  return hand
+}
 
 const MAX_CONVOS = 30
 const MAX_MESSAGES = 80
@@ -60,6 +89,7 @@ function renderMarkdown(text) {
 export default function ProductionChat() {
   const [convos, setConvos] = useState(loadConvos)
   const [activeId, setActiveId] = useState(null)
+  const [starters, setStarters] = useState(dealStarters)
   const [input, setInput] = useState('')
   const [busy, setBusy] = useState(false)
   const [dataAsOf, setDataAsOf] = useState(null)
@@ -81,6 +111,7 @@ export default function ProductionChat() {
 
   function newConversation() {
     setActiveId(null)
+    setStarters(dealStarters())
     setInput('')
     setDrawerOpen(false)
     inputRef.current?.focus()
@@ -90,7 +121,10 @@ export default function ProductionChat() {
     e.stopPropagation()
     const next = convos.filter((c) => c.id !== id)
     persist(next)
-    if (activeId === id) setActiveId(null)
+    if (activeId === id) {
+      setActiveId(null)
+      setStarters(dealStarters())
+    }
   }
 
   async function send(text) {
@@ -196,7 +230,7 @@ export default function ProductionChat() {
             <div className="prodchat-welcome">
               <p>Try one of these to get started:</p>
               <div className="prodchat-chips">
-                {STARTERS.map((s) => (
+                {starters.map((s) => (
                   <button key={s} className="prodchat-chip" onClick={() => send(s)} disabled={busy}>
                     {s}
                   </button>
