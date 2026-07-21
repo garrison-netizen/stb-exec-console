@@ -1,0 +1,24 @@
+// Vercel serverless function for the Marketing space dashboard.
+// Mirrors the dev middleware in notion-plugin.js.
+
+import { marketingDashboard } from '../lib/marketingCore.js';
+import { requireSpace } from '../lib/auth.js';
+
+export default async function handler(req, res) {
+  if (req.method !== 'GET') {
+    return res.status(405).json({ ok: false, error: 'Method not allowed' });
+  }
+  try {
+    await requireSpace(req, 'Marketing');
+  } catch (err) {
+    return res.status(err.status || 500).json({ ok: false, error: err.message });
+  }
+  try {
+    const model = await marketingDashboard({ force: req.query.refresh === '1' });
+    return res.status(200).json({ ok: true, ...model });
+  } catch (err) {
+    const msg = (err && err.message) || String(err);
+    console.error('[/api/marketing] error:', msg);
+    return res.status((err && err.status) || 500).json({ ok: false, error: msg });
+  }
+}

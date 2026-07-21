@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react'
 import App from './App.jsx'
 import ProductionSpace from './spaces/ProductionSpace.jsx'
 import EventsSpace from './spaces/EventsSpace.jsx'
-import { TaproomSpace, SalesSpace, MarketingSpace, RndSpace } from './spaces/PlannedSpaces.jsx'
+import { TaproomSpace, SalesSpace, RndSpace } from './spaces/PlannedSpaces.jsx'
+import MarketingSpace from './spaces/MarketingSpace.jsx'
 import { apiFetch, currentEmail, signOut } from './Auth.jsx'
 
 // The STB App shell: asks the server which spaces this user may enter and

@@ -54,23 +54,6 @@ export function SalesSpace() {
   )
 }
 
-export function MarketingSpace() {
-  return (
-    <DeptSpace
-      title="Marketing"
-      tabs={[
-        tab('dashboard', 'Dashboard', 'Marketing Dashboard',
-          'Campaign performance from the Mailchimp log (already syncing daily), with Tripleseat lead attribution joining it — which campaigns actually produce event leads.',
-          'Next up'),
-        tab('assistant', 'Assistant', 'Marketing Assistant',
-          'Read-only analyst over campaigns + lead sources. Follows the dashboard.',
-          'Planned'),
-        ...EOS_TABS,
-      ]}
-    />
-  )
-}
-
 export function RndSpace() {
   return (
     <DeptSpace

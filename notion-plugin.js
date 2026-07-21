@@ -87,6 +87,21 @@ export function notionDevPlugin() {
         }
       });
 
+      // Marketing space dashboard — same core as api/marketing.js in production.
+      server.middlewares.use('/api/marketing', async (req, res, next) => {
+        if (req.method !== 'GET') return next();
+        try {
+          const url = new URL(req.url, 'http://localhost');
+          const { marketingDashboard } = await import('./lib/marketingCore.js');
+          const model = await marketingDashboard({ force: url.searchParams.get('refresh') === '1' });
+          sendJson(res, 200, { ok: true, ...model });
+        } catch (err) {
+          const msg = (err && err.message) || String(err);
+          console.error('[dev /api/marketing] error:', msg);
+          sendJson(res, (err && err.status) || 500, { ok: false, error: msg });
+        }
+      });
+
       // Production space dashboard — same core as api/production.js in production.
       server.middlewares.use('/api/production', async (req, res, next) => {
         if (req.method !== 'GET') return next();
