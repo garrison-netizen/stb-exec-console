@@ -100,7 +100,7 @@ function DashboardBody({ m }) {
         </div>
         <div className="pe-kpi">
           <div className="pe-kpi-value">{money(a.unpaidBalanceTotal)}</div>
-          <div className="pe-kpi-label">unpaid balances · {a.unpaidBalances.length} past events</div>
+          <div className="pe-kpi-label">unpaid balances · {a.unpaidBalanceCount} past events</div>
         </div>
       </div>
 
@@ -109,13 +109,16 @@ function DashboardBody({ m }) {
           <h2>Needs attention</h2>
           {a.unpaidBalances.length > 0 && (
             <>
-              <h3>Unpaid balances — past events ({money(a.unpaidBalanceTotal)} outstanding)</h3>
+              <h3>
+                Unpaid balances — {a.unpaidBalanceCount} past events, {money(a.unpaidBalanceTotal)} outstanding
+                {a.unpaidBalanceCount > a.unpaidBalances.length ? ` (largest ${a.unpaidBalances.length} shown)` : ''}
+              </h3>
               <table className="pe-table">
                 <thead><tr><th>Event date</th><th>Event</th><th className="num">Revenue</th><th>Deposit</th><th>Rep</th></tr></thead>
                 <tbody>
                   {a.unpaidBalances.map((b, i) => (
                     <tr key={i}>
-                      <td>{b.date}</td><td>{b.title}</td><td className="num">{money(b.revenue)}</td>
+                      <td>{b.date}</td><td className="ev" title={b.title}>{b.title}</td><td className="num">{money(b.revenue)}</td>
                       <td><Paid yes={b.depositPaid} /></td><td>{b.rep || '—'}</td>
                     </tr>
                   ))}
@@ -125,18 +128,21 @@ function DashboardBody({ m }) {
           )}
           {a.unpaidDeposits.length > 0 && (
             <>
-              <h3>Upcoming events with no deposit</h3>
+              <h3>Upcoming revenue events with no deposit — next {m.upcomingDays} days ({a.unpaidDepositCount})</h3>
               <table className="pe-table">
                 <thead><tr><th>Event date</th><th>Event</th><th className="num">Revenue</th><th className="num">Deposit due</th><th>Rep</th></tr></thead>
                 <tbody>
                   {a.unpaidDeposits.map((b, i) => (
                     <tr key={i}>
-                      <td>{b.date}</td><td>{b.title}</td><td className="num">{money(b.revenue)}</td>
+                      <td>{b.date}</td><td className="ev" title={b.title}>{b.title}</td><td className="num">{money(b.revenue)}</td>
                       <td className="num">{b.depositAmt != null ? money(b.depositAmt) : '—'}</td><td>{b.rep || '—'}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
+              {a.unpaidDepositCount > a.unpaidDeposits.length && (
+                <p className="pe-note">…and {a.unpaidDepositCount - a.unpaidDeposits.length} more in this window.</p>
+              )}
             </>
           )}
           {a.staleLeads.length > 0 && (
@@ -147,7 +153,7 @@ function DashboardBody({ m }) {
                 <tbody>
                   {a.staleLeads.map((l, i) => (
                     <tr key={i}>
-                      <td>{l.createdAt}</td><td>{l.title}</td><td>{l.eventType || '—'}</td>
+                      <td>{l.createdAt}</td><td className="ev" title={l.title}>{l.title}</td><td>{l.eventType || '—'}</td>
                       <td>{l.reqDate || '—'}</td><td>{l.source}</td>
                     </tr>
                   ))}
@@ -170,7 +176,7 @@ function DashboardBody({ m }) {
             <tbody>
               {m.upcoming.map((u, i) => (
                 <tr key={i}>
-                  <td>{u.date}</td><td>{u.title}</td>
+                  <td>{u.date}</td><td className="ev" title={u.title}>{u.title}</td>
                   <td className="num">{u.headcount ?? '—'}</td><td className="num">{money(u.revenue)}</td>
                   <td><Paid yes={u.depositPaid} /></td><td><Paid yes={u.balancePaid} /></td><td>{u.rep || '—'}</td>
                 </tr>

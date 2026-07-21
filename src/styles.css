@@ -1192,3 +1192,6 @@ body {
   .pe-section { overflow-x: auto; }
   .pe-table { min-width: 520px; }
 }
+.pe-table td.ev {
+  max-width: 340px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
