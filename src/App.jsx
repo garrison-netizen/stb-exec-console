@@ -741,7 +741,6 @@ export default function App() {
   return (
     <div className="app">
       <header className="topbar">
-        <img src="/logo.png" alt="Spindletap" className="brand-logo" />
         <h1>Executive Console</h1>
         <div className="topbar-status">
           <span className="need">{needsBadge} need{needsBadge === 1 ? 's' : ''} you</span>

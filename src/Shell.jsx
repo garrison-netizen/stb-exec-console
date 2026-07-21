@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import App from './App.jsx'
-import ProductionChat from './spaces/ProductionChat.jsx'
+import ProductionSpace from './spaces/ProductionSpace.jsx'
 import { apiFetch, currentEmail, signOut } from './Auth.jsx'
 
 // The STB App shell: asks the server which spaces this user may enter and
@@ -10,7 +10,7 @@ import { apiFetch, currentEmail, signOut } from './Auth.jsx'
 
 const SPACE_DEFS = [
   { key: 'Exec', label: 'Executive', render: () => <App /> },
-  { key: 'Production', label: 'Production', render: () => <ProductionChat /> },
+  { key: 'Production', label: 'Production', render: () => <ProductionSpace /> },
   // Events space mounts here when it ships.
 ]
 
