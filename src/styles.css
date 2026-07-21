@@ -928,3 +928,22 @@ body {
   .prodchat-inputbar { padding: 10px 12px 14px; }
   .shell-user { display: none; }
 }
+
+/* ---- Shell spaces stay mounted (state survives tab switches) ---- */
+.shell-space { height: 100%; }
+
+/* ---- New conversation button ---- */
+.prodchat-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; }
+.prodchat-new {
+  flex-shrink: 0;
+  background: transparent;
+  border: 1px solid var(--brass-500);
+  color: var(--brass-600);
+  font: 600 12.5px var(--font-body);
+  padding: 8px 16px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+.prodchat-new:hover { background: var(--brass-100); color: var(--navy-900); }

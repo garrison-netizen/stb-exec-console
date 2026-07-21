@@ -44,7 +44,7 @@ export default function Shell() {
       <div className="signin-screen">
         <div className="signin-card">
           <img src="/logo-mark.png" alt="Spindletap Beverages" className="signin-logo" />
-          <h1>STB App</h1>
+          <h1>STB Console</h1>
           <p className="signin-deny">{error}</p>
           <button className="shell-signout" onClick={signOut}>
             Sign in with a different account
@@ -92,7 +92,19 @@ export default function Shell() {
           )}
         </nav>
       )}
-      <div className="shell-body">{current ? current.render() : null}</div>
+      <div className="shell-body">
+        {available.map((s) => (
+          // Every granted space stays mounted; switching tabs hides rather than
+          // destroys, so a chat conversation survives a trip to another space.
+          <div
+            key={s.key}
+            className="shell-space"
+            style={{ display: current && current.key === s.key ? 'block' : 'none' }}
+          >
+            {s.render()}
+          </div>
+        ))}
+      </div>
     </div>
   )
 }

@@ -56,7 +56,7 @@ export default function AuthGate({ children }) {
         <div className="signin-screen">
           <div className="signin-card">
             <img src="/logo-mark.png" alt="Spindletap Beverages" className="signin-logo" />
-            <h1>STB App</h1>
+            <h1>STB Console</h1>
             <p className="signin-deny">
               Sign-in is not configured for this deployment (missing Google
               client id). Contact Garrison.
@@ -144,7 +144,7 @@ function SignInFlow({ children }) {
     <div className="signin-screen">
       <div className="signin-card">
         <img src="/logo-mark.png" alt="Spindletap Beverages" className="signin-logo" />
-        <h1>STB App</h1>
+        <h1>STB Console</h1>
         {state.status === 'error' ? (
           <p className="signin-deny">Something went wrong signing in. Please try again.</p>
         ) : (

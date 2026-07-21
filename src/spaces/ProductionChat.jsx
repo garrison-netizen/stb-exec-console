@@ -70,6 +70,18 @@ export default function ProductionChat() {
             {dataAsOf ? ` Data as of ${String(dataAsOf).slice(0, 16).replace('T', ' ')} UTC.` : ''}
           </p>
         </div>
+        {messages.length > 0 && (
+          <button
+            className="prodchat-new"
+            onClick={() => {
+              setMessages([])
+              setInput('')
+              inputRef.current?.focus()
+            }}
+          >
+            + New conversation
+          </button>
+        )}
       </header>
 
       <div className="prodchat-scroll">
