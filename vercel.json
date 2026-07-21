@@ -4,6 +4,10 @@
       "maxDuration": 300,
       "includeFiles": "node_modules/sql.js/dist/sql-wasm.wasm"
     },
+    "api/events-chat.js": {
+      "maxDuration": 300,
+      "includeFiles": "node_modules/sql.js/dist/sql-wasm.wasm"
+    },
     "api/mirror-upload.js": {
       "maxDuration": 60
     }

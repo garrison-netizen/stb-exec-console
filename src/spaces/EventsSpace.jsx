@@ -1,14 +1,24 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import { apiFetch } from '../Auth.jsx'
+import DeptSpace, { EOS_TABS } from './DeptSpace.jsx'
+import EventsChat from './EventsChat.jsx'
 
-// The Events department's dashboard: private-event revenue, upcoming board,
-// collections attention list, and the lead funnel — computed server-side from
-// the Triple Seat–synced Private Events databases (/api/events).
+// The Events department: standard department frame (DeptSpace) with the
+// Private Events dashboard as the working surface, the Events assistant,
+// and the EOS tabs. Dashboard numbers are computed server-side from the
+// Triple Seat–synced Private Events databases (/api/events).
 // Revenue = actual when recorded, else quoted; cancelled events excluded.
 
 const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 
 const money = (n) => '$' + Math.round(n || 0).toLocaleString('en-US')
+// Signed money for deltas: −$3,670 / +$1,369 (real minus sign, not $-).
+const moneySigned = (n) => (n < 0 ? '−' : '+') + money(Math.abs(n || 0))
+
+function Delta({ value }) {
+  if (value === null || value === undefined) return <>—</>
+  return <span className={'pe-delta ' + (value < 0 ? 'bad' : 'ok')}>{moneySigned(value)}</span>
+}
 
 function Paid({ yes, label }) {
   // Status is never color alone: symbol + word, tinted.
@@ -19,7 +29,17 @@ function Paid({ yes, label }) {
   )
 }
 
+const TABS = [
+  { key: 'dashboard', label: 'Dashboard', render: () => <EventsDashboard /> },
+  { key: 'assistant', label: 'Assistant', render: () => <EventsChat /> },
+  ...EOS_TABS,
+]
+
 export default function EventsSpace() {
+  return <DeptSpace title="Private Events" tabs={TABS} />
+}
+
+function EventsDashboard() {
   const [model, setModel] = useState(null)
   const [error, setError] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -40,28 +60,24 @@ export default function EventsSpace() {
   useEffect(() => { load(false) }, [load])
 
   return (
-    <div className="dept">
-      <header className="dept-banner">
-        <h1>Private Events Dashboard</h1>
-        {model && (
-          <span className="dept-banner-sub">
+    <div className="pe-body">
+      {error && (
+        <div className="pe-error">
+          <strong>Couldn’t load the dashboard.</strong> {error}
+        </div>
+      )}
+      {!error && !model && <div className="pe-loading">Loading private-events data…</div>}
+      {model && (
+        <>
+          <div className="pe-asof">
             Data as of {new Date(model.generatedAt).toLocaleString()} ·{' '}
             <button className="pe-refresh" onClick={() => load(true)} disabled={loading}>
               {loading ? 'Refreshing…' : 'Refresh'}
             </button>
-          </span>
-        )}
-      </header>
-
-      <div className="pe-body">
-        {error && (
-          <div className="pe-error">
-            <strong>Couldn’t load the dashboard.</strong> {error}
           </div>
-        )}
-        {!error && !model && <div className="pe-loading">Loading private-events data…</div>}
-        {model && <DashboardBody m={model} />}
-      </div>
+          <DashboardBody m={model} />
+        </>
+      )}
     </div>
   )
 }
@@ -198,7 +214,7 @@ function DashboardBody({ m }) {
                 <td className="num">{money(r.revenue)}</td>
                 <td className="num">{r.bar ? money(r.bar) : '—'}</td>
                 <td className="num">{r.lastYear ? money(r.lastYear) : '—'}</td>
-                <td className="num">{r.lastYear || r.revenue ? money(r.revenue - r.lastYear) : '—'}</td>
+                <td className="num">{r.lastYear || r.revenue ? <Delta value={r.revenue - r.lastYear} /> : '—'}</td>
               </tr>
             ))}
           </tbody>

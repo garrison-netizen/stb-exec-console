@@ -1195,3 +1195,32 @@ body {
 .pe-table td.ev {
   max-width: 340px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
+
+/* ---- Department tab row + panes (DeptSpace) ---- */
+.dept-tabs {
+  flex: none;
+  display: flex;
+  gap: 2px;
+  padding: 0 22px;
+  background: var(--cream);
+  border-bottom: 1px solid var(--line);
+  overflow-x: auto;
+}
+.dept-tab {
+  background: none; border: none; cursor: pointer;
+  font-family: var(--font-display); font-size: 11.5px; font-weight: 700;
+  letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--muted); padding: 11px 14px 9px;
+  border-bottom: 2px solid transparent; white-space: nowrap;
+}
+.dept-tab:hover { color: var(--navy-900); }
+.dept-tab.active { color: var(--navy-900); border-bottom-color: var(--brass-500); }
+.dept-pane { flex: 1; min-height: 0; flex-direction: column; }
+.dept-eos.single { grid-template-columns: minmax(0, 420px); border-bottom: none; }
+.pe-asof { font-size: 11.5px; color: var(--muted); margin-bottom: 10px; }
+
+/* ---- Signed deltas ---- */
+.pe-delta { font-variant-numeric: tabular-nums; font-weight: 600; }
+.pe-delta.ok { color: var(--ok); }
+.pe-delta.bad { color: var(--bad); }
+.dept-main { display: flex; flex-direction: column; }

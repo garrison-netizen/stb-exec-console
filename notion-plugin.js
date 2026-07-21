@@ -87,6 +87,21 @@ export function notionDevPlugin() {
         }
       });
 
+      // Events space chatbot — same engine as api/events-chat.js in production.
+      server.middlewares.use('/api/events-chat', async (req, res, next) => {
+        if (req.method !== 'POST') return next();
+        try {
+          const body = await readJson(req);
+          const { handleEventsChat } = await import('./lib/eventsChatCore.js');
+          const result = await handleEventsChat(body, 'dev@local');
+          sendJson(res, 200, result);
+        } catch (err) {
+          const msg = (err && err.message) || String(err); // sql.js throws strings
+          console.error('[dev /api/events-chat] error:', msg);
+          sendJson(res, (err && err.status) || 500, { ok: false, error: msg });
+        }
+      });
+
       // Events space dashboard — same core as api/events.js in production.
       server.middlewares.use('/api/events', async (req, res, next) => {
         if (req.method !== 'GET') return next();
