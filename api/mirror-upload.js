@@ -17,7 +17,7 @@ import { handleUpload } from '@vercel/blob/client';
 
 const TEAM_ISSUER = 'https://oidc.vercel.com/garrison-s-projects';
 const AUDIENCE = 'https://vercel.com/garrison-s-projects';
-const PROJECT_MARKER = 'project:stb-exec-console';
+const PROJECT_MARKER = 'project:stb-console'; // OIDC sub claim follows the Vercel project name (renamed 2026-07-21)
 const PATHNAME = 'ekos-mirror.sqlite';
 const MAX_BYTES = 200 * 1024 * 1024; // generous ceiling; mirror is ~22MB today
 
