@@ -10,24 +10,24 @@ const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Se
 const pct = (r) => (r == null ? '—' : (100 * r).toFixed(1) + '%')
 const count = (n) => (n || 0).toLocaleString('en-US')
 
-const TABS = [
-  { key: 'dashboard', label: 'Dashboard', render: () => <MarketingDashboard /> },
-  {
-    key: 'assistant',
-    label: 'Assistant',
-    render: () => (
-      <EosPlaceholder
-        title="Marketing Assistant"
-        note="Read-only analyst over campaigns + lead sources, on the same engine as the other assistants. Say the word and it ships."
-        status="Planned"
-      />
-    ),
-  },
-  ...EOS_TABS,
-]
-
-export default function MarketingSpace() {
-  return <DeptSpace title="Marketing" tabs={TABS} />
+export default function MarketingSpace({ isExec }) {
+  const tabs = [
+    // Dashboard is Exec-only while being dialed in (API enforces this too).
+    ...(isExec ? [{ key: 'dashboard', label: 'Dashboard', render: () => <MarketingDashboard /> }] : []),
+    {
+      key: 'assistant',
+      label: 'Assistant',
+      render: () => (
+        <EosPlaceholder
+          title="Marketing Assistant"
+          note="Read-only analyst over campaigns + lead sources, on the same engine as the other assistants. Say the word and it ships."
+          status="Planned"
+        />
+      ),
+    },
+    ...EOS_TABS,
+  ]
+  return <DeptSpace title="Marketing" tabs={tabs} />
 }
 
 function MarketingDashboard() {

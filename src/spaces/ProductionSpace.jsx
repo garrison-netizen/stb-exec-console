@@ -8,12 +8,12 @@ import ProductionChat from './ProductionChat.jsx'
 // light up as the EOS rollout standardizes them — ADR-005 Admin-hub pilot
 // first).
 
-const TABS = [
-  { key: 'dashboard', label: 'Dashboard', render: () => <ProductionDashboard /> },
-  { key: 'assistant', label: 'Assistant', render: () => <ProductionChat /> },
-  ...EOS_TABS,
-]
-
-export default function ProductionSpace() {
-  return <DeptSpace title="Production" tabs={TABS} />
+export default function ProductionSpace({ isExec }) {
+  const tabs = [
+    // Dashboard is Exec-only while being dialed in (API enforces this too).
+    ...(isExec ? [{ key: 'dashboard', label: 'Dashboard', render: () => <ProductionDashboard /> }] : []),
+    { key: 'assistant', label: 'Assistant', render: () => <ProductionChat /> },
+    ...EOS_TABS,
+  ]
+  return <DeptSpace title="Production" tabs={tabs} />
 }

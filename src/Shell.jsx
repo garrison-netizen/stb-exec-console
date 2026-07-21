@@ -11,13 +11,15 @@ import { apiFetch, currentEmail, signOut } from './Auth.jsx'
 // Department spaces mount alongside it. The calendar and calculator remain
 // separate apps (same sign-in + allow-list), annexed as links.
 
+// Department dashboards are Exec-only while being dialed in (2026-07-21) —
+// each space also enforces this server-side (/api/* requireSpace 'Exec').
 const SPACE_DEFS = [
   { key: 'Exec', label: 'Executive', render: () => <App /> },
-  { key: 'Production', label: 'Production', render: () => <ProductionSpace /> },
-  { key: 'Events', label: 'Events', render: () => <EventsSpace /> },
+  { key: 'Production', label: 'Production', render: (isExec) => <ProductionSpace isExec={isExec} /> },
+  { key: 'Events', label: 'Events', render: (isExec) => <EventsSpace isExec={isExec} /> },
   { key: 'Taproom', label: 'Taproom', render: () => <TaproomSpace /> },
   { key: 'Sales', label: 'Sales', render: () => <SalesSpace /> },
-  { key: 'Marketing', label: 'Marketing', render: () => <MarketingSpace /> },
+  { key: 'Marketing', label: 'Marketing', render: (isExec) => <MarketingSpace isExec={isExec} /> },
   { key: 'R&D', label: 'R&D', render: () => <RndSpace /> },
 ]
 
@@ -109,7 +111,7 @@ export default function Shell() {
             className="shell-space"
             style={{ display: current && current.key === s.key ? 'block' : 'none' }}
           >
-            {s.render()}
+            {s.render(me.spaces.includes('Exec'))}
           </div>
         ))}
       </div>

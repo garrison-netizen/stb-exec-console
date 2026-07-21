@@ -9,7 +9,9 @@ export default async function handler(req, res) {
     return res.status(405).json({ ok: false, error: 'Method not allowed' });
   }
   try {
-    await requireSpace(req, 'Marketing');
+    // Dashboards are Exec-only while being dialed in (2026-07-21); flip back
+    // to requireSpace(req, 'Marketing') to open them to the department.
+    await requireSpace(req, 'Exec');
   } catch (err) {
     return res.status(err.status || 500).json({ ok: false, error: err.message });
   }

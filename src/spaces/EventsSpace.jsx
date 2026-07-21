@@ -29,14 +29,14 @@ function Paid({ yes, label }) {
   )
 }
 
-const TABS = [
-  { key: 'dashboard', label: 'Dashboard', render: () => <EventsDashboard /> },
-  { key: 'assistant', label: 'Assistant', render: () => <EventsChat /> },
-  ...EOS_TABS,
-]
-
-export default function EventsSpace() {
-  return <DeptSpace title="Private Events" tabs={TABS} />
+export default function EventsSpace({ isExec }) {
+  const tabs = [
+    // Dashboard is Exec-only while being dialed in (API enforces this too).
+    ...(isExec ? [{ key: 'dashboard', label: 'Dashboard', render: () => <EventsDashboard /> }] : []),
+    { key: 'assistant', label: 'Assistant', render: () => <EventsChat /> },
+    ...EOS_TABS,
+  ]
+  return <DeptSpace title="Private Events" tabs={tabs} />
 }
 
 function EventsDashboard() {
