@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { apiFetch } from './Auth.jsx';
 
 // Submission types — drives form behavior + tier mapping
 // Schema names match Brain canonical (Architect v4.6, 2026-05-27)
@@ -95,7 +96,7 @@ export default function SubmissionForm({ onSubmitted }) {
     }
 
     try {
-      const res = await fetch('/api/submit', {
+      const res = await apiFetch('/api/submit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),

@@ -36,6 +36,26 @@ export function notionDevPlugin() {
   return {
     name: 'notion-dev-api',
     configureServer(server) {
+      // Dev user has every space; production resolves this from the allow-list.
+      server.middlewares.use('/api/me', (req, res, next) => {
+        if (req.method !== 'GET') return next();
+        sendJson(res, 200, { ok: true, email: 'dev@local', spaces: ['Exec', 'Production', 'Events'] });
+      });
+
+      // Production space chatbot — same engine as api/chat.js in production.
+      server.middlewares.use('/api/chat', async (req, res, next) => {
+        if (req.method !== 'POST') return next();
+        try {
+          const body = await readJson(req);
+          const { handleChat } = await import('./lib/chatCore.js');
+          const result = await handleChat(body, 'dev@local');
+          sendJson(res, 200, result);
+        } catch (err) {
+          console.error('[dev /api/chat] error:', err.message);
+          sendJson(res, err.status || 500, { ok: false, error: err.message });
+        }
+      });
+
       server.middlewares.use('/api/submit', async (req, res, next) => {
         if (req.method !== 'POST') return next();
         try {

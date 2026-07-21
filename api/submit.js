@@ -3,10 +3,16 @@
 // shared lib/notionCore.js dispatch.
 
 import { dispatchSubmission } from '../lib/notionCore.js';
+import { requireSpace } from '../lib/auth.js';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ ok: false, error: 'Method not allowed' });
+  }
+  try {
+    await requireSpace(req, 'Exec');
+  } catch (err) {
+    return res.status(err.status || 500).json({ ok: false, error: err.message });
   }
   try {
     const result = await dispatchSubmission(req.body);

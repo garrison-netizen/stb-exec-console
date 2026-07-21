@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { apiFetch } from './Auth.jsx';
 
 // Generic list view: fetches /api/list?kind=... and renders rows via renderRow
 function ListView({ kind, renderRow, emptyMessage = 'Nothing here yet.', limit }) {
@@ -10,7 +11,7 @@ function ListView({ kind, renderRow, emptyMessage = 'Nothing here yet.', limit }
     setItems(null);
     setError(null);
     const url = `/api/list?kind=${encodeURIComponent(kind)}${limit ? `&limit=${limit}` : ''}`;
-    fetch(url)
+    apiFetch(url)
       .then((r) => r.json())
       .then((d) => {
         if (!alive) return;

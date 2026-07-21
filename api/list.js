@@ -2,10 +2,16 @@
 // Mirrors the dev middleware in notion-plugin.js.
 
 import { dispatchList } from '../lib/notionCore.js';
+import { requireSpace } from '../lib/auth.js';
 
 export default async function handler(req, res) {
   if (req.method !== 'GET') {
     return res.status(405).json({ ok: false, error: 'Method not allowed' });
+  }
+  try {
+    await requireSpace(req, 'Exec');
+  } catch (err) {
+    return res.status(err.status || 500).json({ ok: false, error: err.message });
   }
   const { kind, limit } = req.query;
   if (!kind) {

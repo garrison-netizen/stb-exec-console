@@ -773,3 +773,127 @@ body {
   .task-row-meta .task-row-smartlist { display: none; }
   .item-actions .btn { padding: 7px 12px; }
 }
+
+/* ===================== STB App shell (2026-07-21) ===================== */
+
+.shell { display: flex; flex-direction: column; height: 100vh; }
+.shell-nav {
+  display: flex; align-items: center; gap: 6px;
+  background: var(--navy-950); color: var(--navy-100);
+  padding: 8px 14px; flex-wrap: wrap;
+}
+.shell-brand {
+  font-family: var(--font-display); font-weight: 800; letter-spacing: 0.08em;
+  color: var(--brass-400); margin-right: 10px; font-size: 15px;
+}
+.shell-tab {
+  background: transparent; border: 1px solid transparent; color: var(--navy-200);
+  font: 600 13px var(--font-body); padding: 6px 14px; border-radius: 999px;
+  cursor: pointer; text-decoration: none; transition: all 0.15s;
+}
+.shell-tab:hover { color: #fff; border-color: var(--navy-700); }
+.shell-tab.active { background: var(--brass-500); color: var(--navy-950); }
+.shell-link { opacity: 0.85; }
+.shell-spacer { flex: 1; }
+.shell-user { font-size: 12px; color: var(--navy-200); max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.shell-signout {
+  background: transparent; border: 1px solid var(--navy-700); color: var(--navy-200);
+  font: 600 12px var(--font-body); padding: 5px 12px; border-radius: 999px; cursor: pointer;
+}
+.shell-signout:hover { color: #fff; border-color: var(--brass-500); }
+.shell-body { flex: 1; overflow: auto; min-height: 0; }
+.shell-loading {
+  height: 100vh; display: flex; align-items: center; justify-content: center;
+  gap: 10px; color: var(--muted); font: 500 15px var(--font-body); background: var(--cream);
+}
+.shell-loading-dot {
+  width: 10px; height: 10px; border-radius: 50%; background: var(--brass-500);
+  animation: prodchat-pulse 1s infinite alternate;
+}
+
+/* ---- Sign-in screen (calendar pattern) ---- */
+.signin-screen {
+  height: 100vh; display: flex; align-items: center; justify-content: center;
+  background: linear-gradient(160deg, var(--navy-950), var(--navy-800)); padding: 20px;
+}
+.signin-card {
+  background: #fff; border-radius: 16px; padding: 38px 34px; max-width: 420px;
+  width: 100%; text-align: center; box-shadow: 0 18px 60px rgba(0,0,0,0.35);
+}
+.signin-card h1 { font-family: var(--font-display); font-size: 24px; color: var(--navy-900); margin-bottom: 10px; }
+.signin-msg { color: var(--muted); font-size: 14px; margin-bottom: 22px; }
+.signin-deny { color: var(--bad); font-size: 14px; margin-bottom: 22px; }
+.signin-btn { display: flex; justify-content: center; margin-bottom: 18px; }
+.signin-foot { font-size: 11px; color: var(--muted); letter-spacing: 0.04em; }
+.signin-card .shell-signout { border-color: var(--line); color: var(--muted); }
+
+/* ---- Production chat ---- */
+.prodchat { display: flex; flex-direction: column; height: 100%; background: var(--cream); }
+.prodchat-head {
+  padding: 18px 22px 14px; background: #fff; border-bottom: 1px solid var(--line);
+}
+.prodchat-head h1 { font-family: var(--font-display); font-size: 19px; color: var(--navy-900); }
+.prodchat-sub { font-size: 12.5px; color: var(--muted); margin-top: 3px; max-width: 720px; }
+.prodchat-scroll { flex: 1; overflow-y: auto; padding: 20px 22px; }
+.prodchat-welcome { max-width: 720px; margin: 30px auto; color: var(--muted); font-size: 14px; }
+.prodchat-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.prodchat-chip {
+  background: #fff; border: 1px solid var(--line); color: var(--ink);
+  font: 500 13px var(--font-body); padding: 9px 14px; border-radius: 999px; cursor: pointer;
+  transition: all 0.15s; text-align: left;
+}
+.prodchat-chip:hover { border-color: var(--brass-500); background: var(--brass-100); }
+.prodchat-msg {
+  max-width: 780px; margin: 0 auto 14px; padding: 12px 16px; border-radius: 12px;
+  font-size: 14px; line-height: 1.55; overflow-wrap: break-word;
+}
+.prodchat-msg.user {
+  background: var(--navy-800); color: #fff; margin-left: auto; margin-right: 0;
+  max-width: 560px; border-bottom-right-radius: 4px; white-space: pre-wrap;
+}
+.prodchat-msg.assistant {
+  background: #fff; border: 1px solid var(--line); border-bottom-left-radius: 4px;
+}
+.prodchat-msg.assistant.error { border-color: var(--bad); color: var(--bad); }
+.prodchat-msg.assistant p { margin: 0 0 8px; }
+.prodchat-msg.assistant p:last-child { margin-bottom: 0; }
+.prodchat-msg.assistant table {
+  border-collapse: collapse; margin: 8px 0; font-size: 13px; display: block;
+  overflow-x: auto; max-width: 100%;
+}
+.prodchat-msg.assistant th, .prodchat-msg.assistant td {
+  border: 1px solid var(--line); padding: 5px 10px; text-align: left; white-space: nowrap;
+}
+.prodchat-msg.assistant th { background: var(--navy-50); font-weight: 600; color: var(--navy-900); }
+.prodchat-msg.assistant tr:nth-child(even) td { background: #fafbfd; }
+.prodchat-msg.assistant code { background: var(--navy-50); padding: 1px 5px; border-radius: 4px; font-size: 12.5px; }
+.prodchat-msg.thinking { display: flex; align-items: center; gap: 5px; color: var(--muted); }
+.prodchat-msg.thinking .dot {
+  width: 7px; height: 7px; border-radius: 50%; background: var(--brass-500);
+  animation: prodchat-pulse 1s infinite alternate;
+}
+.prodchat-msg.thinking .dot:nth-child(2) { animation-delay: 0.25s; }
+.prodchat-msg.thinking .dot:nth-child(3) { animation-delay: 0.5s; }
+.prodchat-msg.thinking .thinking-label { margin-left: 6px; font-size: 13px; }
+@keyframes prodchat-pulse { from { opacity: 0.35; } to { opacity: 1; } }
+.prodchat-inputbar {
+  display: flex; gap: 10px; padding: 14px 22px 18px; background: #fff;
+  border-top: 1px solid var(--line);
+}
+.prodchat-inputbar input {
+  flex: 1; max-width: 780px; margin-left: auto; border: 1px solid var(--line);
+  border-radius: 999px; padding: 11px 18px; font: 400 14px var(--font-body);
+  outline: none; background: var(--cream);
+}
+.prodchat-inputbar input:focus { border-color: var(--brass-500); background: #fff; }
+.prodchat-inputbar button {
+  margin-right: auto; background: var(--navy-800); color: #fff; border: none;
+  border-radius: 999px; padding: 11px 22px; font: 600 14px var(--font-body); cursor: pointer;
+}
+.prodchat-inputbar button:hover:not(:disabled) { background: var(--navy-700); }
+.prodchat-inputbar button:disabled { opacity: 0.45; cursor: default; }
+@media (max-width: 640px) {
+  .prodchat-scroll { padding: 14px 12px; }
+  .prodchat-inputbar { padding: 10px 12px 14px; }
+  .shell-user { display: none; }
+}

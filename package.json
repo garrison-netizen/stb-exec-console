@@ -14,9 +14,13 @@
     "promoter:dry": "node scripts/run-gtd-promoter.js --dry-run"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.112.4",
     "@notionhq/client": "^2.2.15",
+    "dompurify": "^3.4.12",
+    "marked": "^18.0.7",
     "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "react-dom": "^18.3.1",
+    "sql.js": "^1.14.1"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.3.4",

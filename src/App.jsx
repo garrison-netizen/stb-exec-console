@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { apiFetch } from './Auth.jsx';
 import Section from './components/Section.jsx';
 import Item from './components/Item.jsx';
 import YourQueueSection from './components/YourQueueSection.jsx';
@@ -170,7 +171,7 @@ export default function App() {
 
   function reloadRocks() {
     setRocks((s) => ({ ...s, loading: true, error: null }));
-    fetch('/api/list?kind=company_rocks&limit=12')
+    apiFetch('/api/list?kind=company_rocks&limit=12')
       .then((r) => r.json())
       .then((d) => {
         if (!d.ok) throw new Error(d.error || 'fetch failed');
@@ -181,7 +182,7 @@ export default function App() {
 
   function reloadDecisions() {
     setDecisions((s) => ({ ...s, loading: true, error: null }));
-    fetch('/api/list?kind=decisions_pending&limit=25')
+    apiFetch('/api/list?kind=decisions_pending&limit=25')
       .then((r) => r.json())
       .then((d) => {
         if (!d.ok) throw new Error(d.error || 'fetch failed');
@@ -198,7 +199,7 @@ export default function App() {
 
   function reloadExternalHolds() {
     setExternalHolds((s) => ({ ...s, loading: true, error: null }));
-    fetch('/api/list?kind=external_holds&limit=25')
+    apiFetch('/api/list?kind=external_holds&limit=25')
       .then((r) => r.json())
       .then((d) => {
         if (!d.ok) throw new Error(d.error || 'fetch failed');
@@ -208,7 +209,7 @@ export default function App() {
   }
 
   function reloadLastRecon() {
-    fetch('/api/list?kind=recent_reconciles&limit=1')
+    apiFetch('/api/list?kind=recent_reconciles&limit=1')
       .then((r) => r.json())
       .then((d) => {
         if (!d.ok) throw new Error(d.error || 'fetch failed');
@@ -218,7 +219,7 @@ export default function App() {
   }
 
   function reloadReconcileTargets() {
-    fetch('/api/list?kind=channel_recent&limit=25')
+    apiFetch('/api/list?kind=channel_recent&limit=25')
       .then((r) => r.json())
       .then((d) => {
         if (!d.ok) return;
@@ -235,7 +236,7 @@ export default function App() {
 
   function reloadFreshness() {
     setFreshness((s) => ({ ...s, loading: true, error: null }));
-    fetch('/api/list?kind=agent_freshness&limit=25')
+    apiFetch('/api/list?kind=agent_freshness&limit=25')
       .then((r) => r.json())
       .then((d) => {
         if (!d.ok) throw new Error(d.error || 'fetch failed');
@@ -253,7 +254,7 @@ export default function App() {
   // the loading flag stays down so the list never unmounts (keeps scroll).
   function reloadSourceNarratives(silent = false) {
     if (!silent) setSourceNarratives((s) => ({ ...s, loading: true, error: null }));
-    fetch('/api/list?kind=source_narratives_needed&limit=25')
+    apiFetch('/api/list?kind=source_narratives_needed&limit=25')
       .then((r) => r.json())
       .then((d) => {
         if (!d.ok) throw new Error(d.error || 'fetch failed');
@@ -264,7 +265,7 @@ export default function App() {
 
   function reloadActiveTasks(silent = false) {
     if (!silent) setActiveTasks((s) => ({ ...s, loading: true, error: null }));
-    fetch('/api/list?kind=active_tasks&limit=100')
+    apiFetch('/api/list?kind=active_tasks&limit=100')
       .then((r) => r.json())
       .then((d) => {
         if (!d.ok) throw new Error(d.error || 'fetch failed');
@@ -275,7 +276,7 @@ export default function App() {
 
   function reloadHeldCaptures(silent = false) {
     if (!silent) setHeldCaptures((s) => ({ ...s, loading: true, error: null }));
-    fetch('/api/list?kind=held_for_garrison&limit=25')
+    apiFetch('/api/list?kind=held_for_garrison&limit=25')
       .then((r) => r.json())
       .then((d) => {
         if (!d.ok) throw new Error(d.error || 'fetch failed');
@@ -288,7 +289,7 @@ export default function App() {
   async function reclassifyHeld(item, captureType) {
     setHeldCaptures((s) => ({ ...s, items: s.items.filter((c) => c.id !== item.id) }));
     try {
-      const res = await fetch('/api/submit', {
+      const res = await apiFetch('/api/submit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -308,7 +309,7 @@ export default function App() {
 
   function reloadProjects() {
     setProjects((s) => ({ ...s, loading: true, error: null }));
-    fetch('/api/list?kind=active_projects&limit=50')
+    apiFetch('/api/list?kind=active_projects&limit=50')
       .then((r) => r.json())
       .then((d) => {
         if (!d.ok) throw new Error(d.error || 'fetch failed');
@@ -319,7 +320,7 @@ export default function App() {
 
   function reloadProjectedTasks(silent = false) {
     if (!silent) setProjectedTasks((s) => ({ ...s, loading: true, error: null }));
-    fetch('/api/list?kind=projected_active_tasks&limit=200')
+    apiFetch('/api/list?kind=projected_active_tasks&limit=200')
       .then((r) => r.json())
       .then((d) => {
         if (!d.ok) throw new Error(d.error || 'fetch failed');
@@ -336,7 +337,7 @@ export default function App() {
     setActiveTasks((s) => ({ ...s, items: s.items.filter((t) => t.id !== task.id) }));
     setProjectedTasks((s) => ({ ...s, items: s.items.filter((t) => t.id !== task.id) }));
     try {
-      const res = await fetch('/api/submit', {
+      const res = await apiFetch('/api/submit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ submissionType: 'mark_task_done', pageId: task.id }),
@@ -359,7 +360,7 @@ export default function App() {
     const editing = taskEditor.task;
     setTaskEditor((s) => ({ ...s, saving: true }));
     try {
-      const res = await fetch('/api/submit', {
+      const res = await apiFetch('/api/submit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(
@@ -385,7 +386,7 @@ export default function App() {
     if (!confirm(`Drop this capture? It will not be promoted.\n\n"${(item.body || item.title || '').slice(0, 120)}"`)) return;
     setHeldCaptures((s) => ({ ...s, items: s.items.filter((c) => c.id !== item.id) }));
     try {
-      const res = await fetch('/api/submit', {
+      const res = await apiFetch('/api/submit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -413,7 +414,7 @@ export default function App() {
     if (!confirm(`Drop the source-narrative request for "${item.title}"?\n\nThe Living Archive row stays; only the narrative ask is unflagged.`)) return;
     setSourceNarratives((s) => ({ ...s, items: s.items.filter((n) => n.id !== item.id) }));
     try {
-      const res = await fetch('/api/submit', {
+      const res = await apiFetch('/api/submit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -473,7 +474,7 @@ export default function App() {
             source: `Console capture bar — ${new Date(item.capturedAt).toISOString()}`,
           };
 
-      const res = await fetch('/api/submit', {
+      const res = await apiFetch('/api/submit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(submission),
@@ -617,7 +618,7 @@ export default function App() {
     const acknowledgedAt = new Date().toISOString();
     const results = await Promise.allSettled(
       items.map((it) =>
-        fetch('/api/submit', {
+        apiFetch('/api/submit', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -654,7 +655,7 @@ export default function App() {
         const summary = Object.entries(fromCounts)
           .map(([k, v]) => `${v} ${k}`)
           .join('; ');
-        const logRes = await fetch('/api/submit', {
+        const logRes = await apiFetch('/api/submit', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
