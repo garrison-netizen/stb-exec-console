@@ -1029,3 +1029,6 @@ body {
   .prodchat-wrap { position: relative; }
   .prodchat-drawer-btn { display: block; }
 }
+
+/* ---- Shell brand logo ---- */
+.shell-logo { height: 34px; width: auto; margin-right: 12px; display: block; }

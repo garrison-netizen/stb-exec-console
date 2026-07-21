@@ -64,13 +64,13 @@ export default function Shell() {
   const available = SPACE_DEFS.filter((s) => me.spaces.includes(s.key))
   const current = available.find((s) => s.key === active) || available[0]
   const email = me.email || currentEmail() || 'dev'
-  const showNav = available.length + LINKS.length > 1
 
   return (
     <div className="shell">
-      {showNav && (
-        <nav className="shell-nav">
-          <span className="shell-brand">STB</span>
+      {/* Always shown — it carries the brand, the user's identity, and sign-out,
+          even for single-space users like a department head. */}
+      <nav className="shell-nav">
+        <img src="/logo-mark.png" alt="Spindletap Beverages" className="shell-logo" />
           {available.map((s) => (
             <button
               key={s.key}
@@ -90,8 +90,7 @@ export default function Shell() {
           {import.meta.env.VITE_GOOGLE_CLIENT_ID && (
             <button className="shell-signout" onClick={signOut}>Sign out</button>
           )}
-        </nav>
-      )}
+      </nav>
       <div className="shell-body">
         {available.map((s) => (
           // Every granted space stays mounted; switching tabs hides rather than
