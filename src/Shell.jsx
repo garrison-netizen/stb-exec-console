@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import App from './App.jsx'
 import ProductionSpace from './spaces/ProductionSpace.jsx'
 import EventsSpace from './spaces/EventsSpace.jsx'
+import { TaproomSpace, SalesSpace, MarketingSpace, RndSpace } from './spaces/PlannedSpaces.jsx'
 import { apiFetch, currentEmail, signOut } from './Auth.jsx'
 
 // The STB App shell: asks the server which spaces this user may enter and
@@ -13,6 +14,10 @@ const SPACE_DEFS = [
   { key: 'Exec', label: 'Executive', render: () => <App /> },
   { key: 'Production', label: 'Production', render: () => <ProductionSpace /> },
   { key: 'Events', label: 'Events', render: () => <EventsSpace /> },
+  { key: 'Taproom', label: 'Taproom', render: () => <TaproomSpace /> },
+  { key: 'Sales', label: 'Sales', render: () => <SalesSpace /> },
+  { key: 'Marketing', label: 'Marketing', render: () => <MarketingSpace /> },
+  { key: 'R&D', label: 'R&D', render: () => <RndSpace /> },
 ]
 
 const LINKS = [

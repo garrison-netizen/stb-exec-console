@@ -39,7 +39,7 @@ export function notionDevPlugin() {
       // Dev user has every space; production resolves this from the allow-list.
       server.middlewares.use('/api/me', (req, res, next) => {
         if (req.method !== 'GET') return next();
-        sendJson(res, 200, { ok: true, email: 'dev@local', spaces: ['Exec', 'Production', 'Events'] });
+        sendJson(res, 200, { ok: true, email: 'dev@local', spaces: ['Exec', 'Production', 'Events', 'Taproom', 'Sales', 'Marketing', 'R&D'] });
       });
 
       // Production space chatbot — same engine as api/chat.js in production.
