@@ -8,3 +8,4 @@ dist
 .DS_Store
 .commit-msg.tmp
 .env*
+.env.pulled

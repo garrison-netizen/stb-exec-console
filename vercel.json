@@ -3,6 +3,9 @@
     "api/chat.js": {
       "maxDuration": 60,
       "includeFiles": "node_modules/sql.js/dist/sql-wasm.wasm"
+    },
+    "api/mirror-upload.js": {
+      "maxDuration": 60
     }
   }
 }
