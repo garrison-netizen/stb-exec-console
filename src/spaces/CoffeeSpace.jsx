@@ -95,8 +95,12 @@ function Body({ m }) {
           <div className="pe-kpi-label">packaged coffee on the shelf</div>
         </div>
         <div className="pe-kpi">
-          <div className="pe-kpi-value">—</div>
-          <div className="pe-kpi-label">coffee revenue — joins with Clover (register) / Shopify (online)</div>
+          <div className="pe-kpi-value">{m.register ? money(m.register.total) : '—'}</div>
+          <div className="pe-kpi-label">
+            {m.register
+              ? 'register coffee sales (Clover, coverage window) · Shopify pending'
+              : 'coffee revenue — share the Clover DBs with the Console integration'}
+          </div>
         </div>
       </div>
 
@@ -116,6 +120,39 @@ function Body({ m }) {
         </table>
         <p className="pe-note">Quantities are per-pack units (a 12 oz bag and a bulk ounce each count in their own unit) — compare within a row's pack size, not across packs.</p>
       </section>
+
+      {m.register && (
+        <section className="pe-section">
+          <h2>Register coffee sales — by week (Clover)</h2>
+          <table className="pe-table pe-table-narrow">
+            <thead><tr><th>Week of</th><th className="num">Revenue</th></tr></thead>
+            <tbody>
+              {m.register.weekly.slice(-13).map((w, i) => {
+                const maxW = Math.max(...m.register.weekly.map((x) => x.revenue))
+                return (
+                  <tr key={i}>
+                    <td>{w.week}</td>
+                    <td className="num pe-heat" style={maxW > 0 ? { backgroundImage: `linear-gradient(90deg, var(--navy-50) ${Math.min(100, (100 * w.revenue) / maxW)}%, transparent ${Math.min(100, (100 * w.revenue) / maxW)}%)` } : undefined}>{money(w.revenue)}</td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+          <h3>Top sellers at the register</h3>
+          <table className="pe-table">
+            <thead><tr><th>SKU</th><th className="num">Units</th><th className="num">Revenue</th></tr></thead>
+            <tbody>
+              {m.register.topSkus.map((s, i) => (
+                <tr key={i}>
+                  <td className="ev" title={s.name}>{s.name}</td>
+                  <td className="num">{count(s.units)}</td>
+                  <td className="num">{money(s.revenue)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </section>
+      )}
 
       <section className="pe-section">
         <h2>Transfer activity by month — {m.year} vs {m.year - 1}</h2>
@@ -168,9 +205,9 @@ function Body({ m }) {
       </section>
 
       <p className="pe-note pe-footer">
-        Data: Ekos mirror — coffee moves through Ekos as $0 internal transfers to the taproom, so
-        this is a volume and inventory view. Revenue joins when Clover (register) and Shopify
-        (online) integrations land. Freshness follows the Ekos VPN sync.
+        Data: Ekos mirror (transfers + inventory; coffee moves through Ekos as $0 internal transfers)
+        {m.register ? ' + Clover register sales (history loading backward — coverage grows as the backfill runs)' : ''}.
+        Shopify (online sales) not yet integrated. Ekos freshness follows the VPN sync.
       </p>
     </>
   )

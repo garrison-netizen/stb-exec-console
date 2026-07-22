@@ -84,7 +84,7 @@ function Body({ m }) {
           <div className="pe-kpi-label">{m.year} operational revenue (all streams)</div>
           {k.vsLYPct !== null && (
             <div className={'pe-kpi-delta ' + (k.vsLYPct >= 0 ? 'ok' : 'bad')}>
-              {k.vsLYPct >= 0 ? '▲' : '▼'} {Math.abs(k.vsLYPct)}% vs same point {m.year - 1} ({money(k.totalLYtd)})
+              {k.vsLYPct >= 0 ? '▲' : '▼'} {Math.abs(k.vsLYPct)}% vs same point {m.year - 1}, like-for-like ({money(k.totalLYtd)})
             </div>
           )}
         </div>
@@ -97,8 +97,12 @@ function Body({ m }) {
           <div className="pe-kpi-label">private events (Tripleseat) · losses {money(k.lossYTD)}</div>
         </div>
         <div className="pe-kpi">
-          <div className="pe-kpi-value">—</div>
-          <div className="pe-kpi-label">taproom register sales — joins on Clover API approval</div>
+          <div className="pe-kpi-value">{m.taproomAvailable ? money(k.taproomYTD) : '—'}</div>
+          <div className="pe-kpi-label">
+            {m.taproomAvailable
+              ? `taproom register (Clover${m.taproomFrom ? `, since ${m.taproomFrom}` : ''})`
+              : 'taproom register — share the Clover DBs with the Console integration'}
+          </div>
         </div>
       </div>
 
@@ -108,22 +112,24 @@ function Body({ m }) {
           <thead>
             <tr>
               <th>Month</th><th className="num">Wholesale</th>
-              <th className="num">Events</th><th className="num">Total</th>
-              <th className="num">{m.year - 1}</th><th className="num">Δ vs {m.year - 1}</th>
+              <th className="num">Events</th><th className="num">Taproom</th><th className="num">Total</th>
+              <th className="num">{m.year - 1}</th><th className="num">Δ vs {m.year - 1}*</th>
             </tr>
           </thead>
           <tbody>
             {monthly.map((r, i) => {
               const future = i + 1 > thisMonth
               const maxT = Math.max(...monthly.map((x) => Math.max(x.total, x.lastYear)))
+              const likeForLike = r.wholesale + r.events
               return (
                 <tr key={i}>
                   <td>{MONTH_NAMES[Number(r.month) - 1]}{future ? ' (booked ahead)' : ''}</td>
                   <td className="num">{future ? '—' : money(r.wholesale)}</td>
                   <td className="num">{money(r.events)}</td>
+                  <td className="num">{future || !r.taproom ? '—' : money(r.taproom)}</td>
                   <td className="num pe-heat" style={future ? undefined : heat(r.total, maxT)}>{money(r.total)}</td>
                   <td className="num">{future || !r.lastYear ? '—' : money(r.lastYear)}</td>
-                  <td className="num">{future || !(r.lastYear || r.total) ? '—' : <Delta value={r.total - r.lastYear} />}</td>
+                  <td className="num">{future || !(r.lastYear || likeForLike) ? '—' : <Delta value={likeForLike - r.lastYear} />}</td>
                 </tr>
               )
             })}
@@ -133,9 +139,10 @@ function Body({ m }) {
 
       <p className="pe-note pe-footer">
         Signal layer, not the books: Ekos invoice subtotals (wholesale) + Tripleseat event revenue
-        (actual else quoted, cancelled excluded). Taproom register sales live in Clover and join on
-        API approval; also excluded: anything invoiced outside Ekos, refunds/adjustments in QBO, and
-        non-beverage income. Freshness follows the Ekos VPN sync; events sync daily at 6am.
+        (actual else quoted, cancelled excluded) + Clover taproom net (after discounts, before tax/tips
+        {m.taproomFrom ? `; history loading, coverage since ${m.taproomFrom}` : ''}).
+        *Δ vs {m.year - 1} compares wholesale+events only — taproom has no prior-year data until the
+        Clover backfill completes. Excluded: QBO refunds/adjustments and non-beverage income.
       </p>
     </>
   )

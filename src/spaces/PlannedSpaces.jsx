@@ -20,23 +20,6 @@ const tab = (key, label, title, note, status) => ({
   render: () => <EosPlaceholder title={title} note={note} status={status} />,
 })
 
-export function TaproomSpace() {
-  return (
-    <DeptSpace
-      title="Taproom"
-      tabs={[
-        tab('dashboard', 'Dashboard', 'Taproom Dashboard',
-          'Daily sales, labor, and SKU movement from Clover. The pipeline is built and deployed — this lights up the day Clover approves production API access.',
-          'Next up'),
-        tab('assistant', 'Assistant', 'Taproom Assistant',
-          'Read-only analyst over the Clover feed, on the same engine as the Production and Events assistants. Follows the dashboard.',
-          'Planned'),
-        ...EOS_TABS,
-      ]}
-    />
-  )
-}
-
 export function RndSpace() {
   return (
     <DeptSpace
