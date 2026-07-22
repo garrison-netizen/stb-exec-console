@@ -14,6 +14,7 @@ const SPACES = {
   marketing: async (force) => (await import('../lib/marketingCore.js')).marketingDashboard({ force }),
   sales: async (force) => (await import('../lib/salesCore.js')).salesDashboard({ force }),
   finances: async () => (await import('../lib/financeCore.js')).financesDashboard(),
+  coffee: async () => (await import('../lib/coffeeCore.js')).coffeeDashboard(),
 };
 
 export default async function handler(req, res) {

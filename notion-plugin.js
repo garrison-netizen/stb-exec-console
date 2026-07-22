@@ -39,7 +39,7 @@ export function notionDevPlugin() {
       // Dev user has every space; production resolves this from the allow-list.
       server.middlewares.use('/api/me', (req, res, next) => {
         if (req.method !== 'GET') return next();
-        sendJson(res, 200, { ok: true, email: 'dev@local', spaces: ['Exec', 'Finances', 'Production', 'Events', 'Taproom', 'Sales', 'Marketing', 'R&D'] });
+        sendJson(res, 200, { ok: true, email: 'dev@local', spaces: ['Exec', 'Finances', 'Production', 'Events', 'Taproom', 'Sales', 'Marketing', 'Coffee', 'R&D'] });
       });
 
       // Dashboards router — same cores as api/dashboards.js in production.
@@ -60,6 +60,8 @@ export function notionDevPlugin() {
             model = await (await import('./lib/salesCore.js')).salesDashboard({ force });
           } else if (space === 'finances') {
             model = await (await import('./lib/financeCore.js')).financesDashboard();
+          } else if (space === 'coffee') {
+            model = await (await import('./lib/coffeeCore.js')).coffeeDashboard();
           } else {
             return sendJson(res, 400, { ok: false, error: 'Unknown dashboard: ' + space });
           }

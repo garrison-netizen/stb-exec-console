@@ -6,6 +6,7 @@ import { TaproomSpace, RndSpace } from './spaces/PlannedSpaces.jsx'
 import SalesSpace from './spaces/SalesSpace.jsx'
 import MarketingSpace from './spaces/MarketingSpace.jsx'
 import FinancesSpace from './spaces/FinancesSpace.jsx'
+import CoffeeSpace from './spaces/CoffeeSpace.jsx'
 import { apiFetch, currentEmail, signOut } from './Auth.jsx'
 
 // The STB App shell: asks the server which spaces this user may enter and
@@ -23,6 +24,7 @@ const SPACE_DEFS = [
   { key: 'Taproom', label: 'Taproom', render: () => <TaproomSpace /> },
   { key: 'Sales', label: 'Sales', render: (isExec) => <SalesSpace isExec={isExec} /> },
   { key: 'Marketing', label: 'Marketing', render: (isExec) => <MarketingSpace isExec={isExec} /> },
+  { key: 'Coffee', label: 'Coffee', render: (isExec) => <CoffeeSpace isExec={isExec} /> },
   { key: 'R&D', label: 'R&D', render: () => <RndSpace /> },
 ]
 
