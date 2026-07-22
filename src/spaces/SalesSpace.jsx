@@ -15,6 +15,20 @@ function Delta({ value }) {
   return <span className={'pe-delta ' + (value < 0 ? 'bad' : 'ok')}>{ceSigned(value)}</span>
 }
 
+// Trajectory chip: label + tint (never color alone — the word carries it).
+function Chip({ t }) {
+  if (!t) return <>—</>
+  const cls = /Growing/.test(t) ? 'up' : /Declining/.test(t) ? 'down' : /New/.test(t) ? 'new'
+    : /Lapsed|Never/.test(t) ? 'idle' : 'flat'
+  return <span className={'pe-chip ' + cls}>{t}</span>
+}
+
+// Left-anchored magnitude bar behind a numeric cell (Excel-style data bar).
+const heat = (value, max) =>
+  max > 0
+    ? { backgroundImage: `linear-gradient(90deg, var(--navy-50) ${Math.min(100, (100 * value) / max)}%, transparent ${Math.min(100, (100 * value) / max)}%)` }
+    : undefined
+
 const STARTER_POOL = [
   // Volume
   'How is this year tracking against last year, fairly compared?',
@@ -140,9 +154,15 @@ function Body({ m }) {
         <table className="pe-table pe-table-narrow">
           <thead><tr><th>Bucket</th><th className="num">Accounts</th></tr></thead>
           <tbody>
-            {buckets.map((b, i) => (
-              <tr key={i}><td>{b.label}</td><td className="num">{b.n.toLocaleString('en-US')}</td></tr>
-            ))}
+            {buckets.map((b, i) => {
+              const maxB = Math.max(...buckets.map((x) => x.n))
+              return (
+                <tr key={i}>
+                  <td><Chip t={b.label} /></td>
+                  <td className="num pe-heat" style={heat(b.n, maxB)}>{b.n.toLocaleString('en-US')}</td>
+                </tr>
+              )
+            })}
           </tbody>
         </table>
         <p className="pe-note">Growing &gt; +10%, Steady ±10%, Declining &lt; −10% vs same period (ADR-013).</p>
@@ -170,9 +190,15 @@ function Body({ m }) {
         <table className="pe-table pe-table-narrow">
           <thead><tr><th>Distributor</th><th className="num">CE</th></tr></thead>
           <tbody>
-            {m.distributors.map((d, i) => (
-              <tr key={i}><td className="ev" title={d.distributor}>{d.distributor}</td><td className="num">{ce(d.ce)}</td></tr>
-            ))}
+            {m.distributors.map((d, i) => {
+              const maxD = Math.max(...m.distributors.map((x) => x.ce))
+              return (
+                <tr key={i}>
+                  <td className="ev" title={d.distributor}>{d.distributor}</td>
+                  <td className="num pe-heat" style={heat(d.ce, maxD)}>{ce(d.ce)}</td>
+                </tr>
+              )
+            })}
           </tbody>
         </table>
         <p style={{ marginTop: 8 }}>
@@ -185,12 +211,15 @@ function Body({ m }) {
         <table className="pe-table pe-table-narrow">
           <thead><tr><th>Year</th><th className="num">CE</th></tr></thead>
           <tbody>
-            {m.byYear.map((y, i) => (
-              <tr key={i}>
-                <td>{y.year}{y.year === m.year ? ' (YTD)' : ''}</td>
-                <td className="num">{ce(y.ce)}</td>
-              </tr>
-            ))}
+            {m.byYear.map((y, i) => {
+              const maxY = Math.max(...m.byYear.map((x) => x.ce))
+              return (
+                <tr key={i}>
+                  <td>{y.year}{y.year === m.year ? ' (YTD)' : ''}</td>
+                  <td className="num pe-heat" style={heat(y.ce, maxY)}>{ce(y.ce)}</td>
+                </tr>
+              )
+            })}
           </tbody>
         </table>
       </section>
@@ -205,7 +234,7 @@ function Body({ m }) {
                 <td className="ev" title={a.name}>{a.name}</td><td>{a.city}</td>
                 <td className="ev" title={a.distributor}>{a.distributor}</td>
                 <td className="num">{ce(a.ceYtd)}</td><td className="num">{ce(a.samePeriod)}</td>
-                <td>{a.trajectory}</td>
+                <td><Chip t={a.trajectory} /></td>
               </tr>
             ))}
           </tbody>

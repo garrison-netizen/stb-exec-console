@@ -16,6 +16,11 @@ function Delta({ value }) {
   return <span className={'pe-delta ' + (value < 0 ? 'bad' : 'ok')}>{moneySigned(value)}</span>
 }
 
+const heat = (value, max) =>
+  max > 0
+    ? { backgroundImage: `linear-gradient(90deg, var(--navy-50) ${Math.min(100, (100 * value) / max)}%, transparent ${Math.min(100, (100 * value) / max)}%)` }
+    : undefined
+
 export default function FinancesSpace() {
   const [model, setModel] = useState(null)
   const [error, setError] = useState(null)
@@ -110,12 +115,13 @@ function Body({ m }) {
           <tbody>
             {monthly.map((r, i) => {
               const future = i + 1 > thisMonth
+              const maxT = Math.max(...monthly.map((x) => Math.max(x.total, x.lastYear)))
               return (
                 <tr key={i}>
                   <td>{MONTH_NAMES[Number(r.month) - 1]}{future ? ' (booked ahead)' : ''}</td>
                   <td className="num">{future ? '—' : money(r.wholesale)}</td>
                   <td className="num">{money(r.events)}</td>
-                  <td className="num">{money(r.total)}</td>
+                  <td className="num pe-heat" style={future ? undefined : heat(r.total, maxT)}>{money(r.total)}</td>
                   <td className="num">{future || !r.lastYear ? '—' : money(r.lastYear)}</td>
                   <td className="num">{future || !(r.lastYear || r.total) ? '—' : <Delta value={r.total - r.lastYear} />}</td>
                 </tr>

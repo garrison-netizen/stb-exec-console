@@ -20,6 +20,11 @@ function Delta({ value }) {
   return <span className={'pe-delta ' + (value < 0 ? 'bad' : 'ok')}>{moneySigned(value)}</span>
 }
 
+const heat = (value, max) =>
+  max > 0
+    ? { backgroundImage: `linear-gradient(90deg, var(--navy-50) ${Math.min(100, (100 * value) / max)}%, transparent ${Math.min(100, (100 * value) / max)}%)` }
+    : undefined
+
 function Paid({ yes, label }) {
   // Status is never color alone: symbol + word, tinted.
   return (
@@ -207,16 +212,19 @@ function DashboardBody({ m }) {
         <table className="pe-table">
           <thead><tr><th>Month</th><th className="num">Events</th><th className="num">Revenue</th><th className="num">Bar sales</th><th className="num">{year - 1}</th><th className="num">Δ vs {year - 1}</th></tr></thead>
           <tbody>
-            {monthly.map((r, i) => (
+            {monthly.map((r, i) => {
+              const maxR = Math.max(...monthly.map((x) => Math.max(x.revenue, x.lastYear)))
+              return (
               <tr key={i}>
                 <td>{MONTH_NAMES[Number(r.month) - 1]}</td>
                 <td className="num">{r.events || '—'}</td>
-                <td className="num">{money(r.revenue)}</td>
+                <td className="num pe-heat" style={heat(r.revenue, maxR)}>{money(r.revenue)}</td>
                 <td className="num">{r.bar ? money(r.bar) : '—'}</td>
                 <td className="num">{r.lastYear ? money(r.lastYear) : '—'}</td>
                 <td className="num">{r.lastYear || r.revenue ? <Delta value={r.revenue - r.lastYear} /> : '—'}</td>
               </tr>
-            ))}
+              )
+            })}
           </tbody>
         </table>
       </section>

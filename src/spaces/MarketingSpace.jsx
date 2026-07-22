@@ -10,6 +10,20 @@ const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Se
 const pct = (r) => (r == null ? '—' : (100 * r).toFixed(1) + '%')
 const count = (n) => (n || 0).toLocaleString('en-US')
 
+const heat = (value, max) =>
+  max > 0
+    ? { backgroundImage: `linear-gradient(90deg, var(--navy-50) ${Math.min(100, (100 * value) / max)}%, transparent ${Math.min(100, (100 * value) / max)}%)` }
+    : undefined
+
+// Open rate vs the YTD recipient-weighted average, with a ±2-point neutral
+// band — only real deviations get a marker, so color stays meaningful.
+function RateVsAvg({ rate, avg }) {
+  if (rate == null) return <>—</>
+  if (avg == null || Math.abs(rate - avg) < 0.02) return <>{pct(rate)}</>
+  const above = rate > avg
+  return <span className={'pe-delta ' + (above ? 'ok' : 'bad')}>{above ? '▲' : '▼'} {pct(rate)}</span>
+}
+
 export default function MarketingSpace({ isExec }) {
   const tabs = [
     // Dashboard is Exec-only while being dialed in (API enforces this too).
@@ -112,7 +126,7 @@ function Body({ m }) {
                 <td className="ev" title={c.name}>{c.name}</td>
                 <td className="ev" title={c.subject}>{c.subject}</td>
                 <td className="num">{count(c.recipients)}</td>
-                <td className="num">{pct(c.openRate)}</td>
+                <td className="num"><RateVsAvg rate={c.openRate} avg={m.kpis.ytdOpenRate} /></td>
                 <td className="num">{pct(c.clickRate)}</td>
               </tr>
             ))}
@@ -125,15 +139,18 @@ function Body({ m }) {
         <table className="pe-table pe-table-narrow">
           <thead><tr><th>Month</th><th className="num">Campaigns</th><th className="num">Emails</th><th className="num">Open rate</th><th className="num">Click rate</th></tr></thead>
           <tbody>
-            {monthly.map((r, i) => (
+            {monthly.map((r, i) => {
+              const maxE = Math.max(...monthly.map((x) => x.recipients))
+              return (
               <tr key={i}>
                 <td>{MONTH_NAMES[Number(r.month) - 1]}</td>
                 <td className="num">{r.campaigns || '—'}</td>
-                <td className="num">{r.recipients ? count(r.recipients) : '—'}</td>
+                <td className="num pe-heat" style={heat(r.recipients, maxE)}>{r.recipients ? count(r.recipients) : '—'}</td>
                 <td className="num">{pct(r.openRate)}</td>
                 <td className="num">{pct(r.clickRate)}</td>
               </tr>
-            ))}
+              )
+            })}
           </tbody>
         </table>
       </section>

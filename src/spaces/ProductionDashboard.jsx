@@ -16,6 +16,19 @@ function Delta({ value, invert }) {
   return <span className={'pe-delta ' + (good ? 'ok' : 'bad')}>{moneySigned(value)}</span>
 }
 
+const heat = (value, max) =>
+  max > 0
+    ? { backgroundImage: `linear-gradient(90deg, var(--navy-50) ${Math.min(100, (100 * value) / max)}%, transparent ${Math.min(100, (100 * value) / max)}%)` }
+    : undefined
+
+// Expiry urgency: red inside 14 days, amber inside 30.
+function ExpiryDate({ date, today }) {
+  const days = Math.round((new Date(date + 'T12:00:00Z') - new Date(today + 'T12:00:00Z')) / 86400000)
+  if (days <= 14) return <span className="pe-delta bad">{date} ({days}d)</span>
+  if (days <= 30) return <span className="pe-kpi-delta warn">{date} ({days}d)</span>
+  return <>{date}</>
+}
+
 export default function ProductionDashboard() {
   const [model, setModel] = useState(null)
   const [error, setError] = useState(null)
@@ -107,7 +120,7 @@ function Body({ m }) {
                 <tbody>
                   {m.expiring.map((e, i) => (
                     <tr key={i}>
-                      <td>{e.expires}</td><td className="ev" title={e.item}>{e.item}</td>
+                      <td><ExpiryDate date={e.expires} today={m.today} /></td><td className="ev" title={e.item}>{e.item}</td>
                       <td className="num">{e.qty}</td><td className="num">{money(e.value)}</td>
                     </tr>
                   ))}
@@ -146,14 +159,17 @@ function Body({ m }) {
         <table className="pe-table pe-table-narrow">
           <thead><tr><th>Month</th><th className="num">{year}</th><th className="num">{year - 1}</th><th className="num">Δ vs {year - 1}</th></tr></thead>
           <tbody>
-            {monthly.map((r, i) => (
+            {monthly.map((r, i) => {
+              const maxL = Math.max(...monthly.map((x) => Math.max(x.loss, x.lastYear)))
+              return (
               <tr key={i}>
                 <td>{MONTH_NAMES[Number(r.month) - 1]}</td>
-                <td className="num">{money(r.loss)}</td>
+                <td className="num pe-heat" style={heat(r.loss, maxL)}>{money(r.loss)}</td>
                 <td className="num">{r.lastYear ? money(r.lastYear) : '—'}</td>
                 <td className="num">{r.lastYear || r.loss ? <Delta value={r.loss - r.lastYear} invert /> : '—'}</td>
               </tr>
-            ))}
+              )
+            })}
           </tbody>
         </table>
       </section>
