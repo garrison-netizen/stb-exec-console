@@ -39,7 +39,7 @@ export function notionDevPlugin() {
       // Dev user has every space; production resolves this from the allow-list.
       server.middlewares.use('/api/me', (req, res, next) => {
         if (req.method !== 'GET') return next();
-        sendJson(res, 200, { ok: true, email: 'dev@local', spaces: ['Exec', 'Production', 'Events', 'Taproom', 'Sales', 'Marketing', 'R&D'] });
+        sendJson(res, 200, { ok: true, email: 'dev@local', spaces: ['Exec', 'Finances', 'Production', 'Events', 'Taproom', 'Sales', 'Marketing', 'R&D'] });
       });
 
       // Production space chatbot — same engine as api/chat.js in production.
@@ -84,6 +84,20 @@ export function notionDevPlugin() {
         } catch (err) {
           console.error('[/api/list] error:', err);
           sendJson(res, 500, { ok: false, error: err.message });
+        }
+      });
+
+      // Finances snapshot — same core as api/finances.js in production.
+      server.middlewares.use('/api/finances', async (req, res, next) => {
+        if (req.method !== 'GET') return next();
+        try {
+          const { financesDashboard } = await import('./lib/financeCore.js');
+          const model = await financesDashboard();
+          sendJson(res, 200, { ok: true, ...model });
+        } catch (err) {
+          const msg = (err && err.message) || String(err);
+          console.error('[dev /api/finances] error:', msg);
+          sendJson(res, (err && err.status) || 500, { ok: false, error: msg });
         }
       });
 
