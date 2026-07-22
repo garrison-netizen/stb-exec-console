@@ -38,7 +38,7 @@ function MarketingDashboard() {
   const load = useCallback((refresh) => {
     setLoading(true)
     setError(null)
-    apiFetch('/api/marketing' + (refresh ? '?refresh=1' : ''))
+    apiFetch('/api/dashboards?space=marketing' + (refresh ? '&refresh=1' : ''))
       .then(async (r) => {
         const data = await r.json()
         if (!r.ok || !data.ok) throw new Error(data.error || 'Could not load the marketing dashboard')

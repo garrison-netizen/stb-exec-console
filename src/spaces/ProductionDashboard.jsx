@@ -24,7 +24,7 @@ export default function ProductionDashboard() {
   const load = useCallback(() => {
     setLoading(true)
     setError(null)
-    apiFetch('/api/production')
+    apiFetch('/api/dashboards?space=production')
       .then(async (r) => {
         const data = await r.json()
         if (!r.ok || !data.ok) throw new Error(data.error || 'Could not load the production dashboard')

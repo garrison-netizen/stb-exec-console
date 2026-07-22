@@ -40,7 +40,7 @@ const STARTER_POOL = [
 function SalesChat() {
   return (
     <DeptChat
-      endpoint="/api/sales-chat"
+      endpoint="/api/assistant?space=sales"
       title="Sales Assistant"
       sub="Distributor depletions, brands, and account trajectories — from the VIP marts."
       starterPool={STARTER_POOL}
@@ -69,7 +69,7 @@ function SalesDashboard() {
   const load = useCallback((refresh) => {
     setLoading(true)
     setError(null)
-    apiFetch('/api/sales' + (refresh ? '?refresh=1' : ''))
+    apiFetch('/api/dashboards?space=sales' + (refresh ? '&refresh=1' : ''))
       .then(async (r) => {
         const data = await r.json()
         if (!r.ok || !data.ok) throw new Error(data.error || 'Could not load the sales dashboard')

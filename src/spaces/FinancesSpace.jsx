@@ -24,7 +24,7 @@ export default function FinancesSpace() {
   const load = useCallback(() => {
     setLoading(true)
     setError(null)
-    apiFetch('/api/finances')
+    apiFetch('/api/dashboards?space=finances')
       .then(async (r) => {
         const data = await r.json()
         if (!r.ok || !data.ok) throw new Error(data.error || 'Could not load the finances snapshot')

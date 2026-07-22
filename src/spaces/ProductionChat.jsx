@@ -36,7 +36,7 @@ const STARTER_POOL = [
 export default function ProductionChat() {
   return (
     <DeptChat
-      endpoint="/api/chat"
+      endpoint="/api/assistant?space=production"
       title="Production Assistant"
       sub="Inventory, batches, yields, losses, purchasing, and sales — straight from Ekos."
       starterPool={STARTER_POOL}

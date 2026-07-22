@@ -42,17 +42,57 @@ export function notionDevPlugin() {
         sendJson(res, 200, { ok: true, email: 'dev@local', spaces: ['Exec', 'Finances', 'Production', 'Events', 'Taproom', 'Sales', 'Marketing', 'R&D'] });
       });
 
-      // Production space chatbot — same engine as api/chat.js in production.
-      server.middlewares.use('/api/chat', async (req, res, next) => {
+      // Dashboards router — same cores as api/dashboards.js in production.
+      server.middlewares.use('/api/dashboards', async (req, res, next) => {
+        if (req.method !== 'GET') return next();
+        const url = new URL(req.url, 'http://localhost');
+        const space = String(url.searchParams.get('space') || '').toLowerCase();
+        const force = url.searchParams.get('refresh') === '1';
+        try {
+          let model;
+          if (space === 'events') {
+            model = await (await import('./lib/eventsCore.js')).eventsDashboard({ force });
+          } else if (space === 'production') {
+            model = await (await import('./lib/productionDashCore.js')).productionDashboard();
+          } else if (space === 'marketing') {
+            model = await (await import('./lib/marketingCore.js')).marketingDashboard({ force });
+          } else if (space === 'sales') {
+            model = await (await import('./lib/salesCore.js')).salesDashboard({ force });
+          } else if (space === 'finances') {
+            model = await (await import('./lib/financeCore.js')).financesDashboard();
+          } else {
+            return sendJson(res, 400, { ok: false, error: 'Unknown dashboard: ' + space });
+          }
+          sendJson(res, 200, { ok: true, ...model });
+        } catch (err) {
+          const msg = (err && err.message) || String(err); // sql.js throws strings
+          console.error(`[dev /api/dashboards ${space}] error:`, msg);
+          sendJson(res, (err && err.status) || 500, { ok: false, error: msg });
+        }
+      });
+
+      // Assistants router — same engines as api/assistant.js in production.
+      server.middlewares.use('/api/assistant', async (req, res, next) => {
         if (req.method !== 'POST') return next();
+        const url = new URL(req.url, 'http://localhost');
+        const space = String(url.searchParams.get('space') || '').toLowerCase();
         try {
           const body = await readJson(req);
-          const { handleChat } = await import('./lib/chatCore.js');
-          const result = await handleChat(body, 'dev@local');
+          let result;
+          if (space === 'production') {
+            result = await (await import('./lib/chatCore.js')).handleChat(body, 'dev@local');
+          } else if (space === 'events') {
+            result = await (await import('./lib/eventsChatCore.js')).handleEventsChat(body, 'dev@local');
+          } else if (space === 'sales') {
+            result = await (await import('./lib/salesChatCore.js')).handleSalesChat(body, 'dev@local');
+          } else {
+            return sendJson(res, 400, { ok: false, error: 'Unknown assistant: ' + space });
+          }
           sendJson(res, 200, result);
         } catch (err) {
-          console.error('[dev /api/chat] error:', err.message);
-          sendJson(res, err.status || 500, { ok: false, error: err.message });
+          const msg = (err && err.message) || String(err); // sql.js throws strings
+          console.error(`[dev /api/assistant ${space}] error:`, msg);
+          sendJson(res, (err && err.status) || 500, { ok: false, error: msg });
         }
       });
 
@@ -83,108 +123,6 @@ export function notionDevPlugin() {
           sendJson(res, 200, { ok: true, kind, count: items.length, items });
         } catch (err) {
           console.error('[/api/list] error:', err);
-          sendJson(res, 500, { ok: false, error: err.message });
-        }
-      });
-
-      // Finances snapshot — same core as api/finances.js in production.
-      server.middlewares.use('/api/finances', async (req, res, next) => {
-        if (req.method !== 'GET') return next();
-        try {
-          const { financesDashboard } = await import('./lib/financeCore.js');
-          const model = await financesDashboard();
-          sendJson(res, 200, { ok: true, ...model });
-        } catch (err) {
-          const msg = (err && err.message) || String(err);
-          console.error('[dev /api/finances] error:', msg);
-          sendJson(res, (err && err.status) || 500, { ok: false, error: msg });
-        }
-      });
-
-      // Sales space dashboard — same core as api/sales.js in production.
-      server.middlewares.use('/api/sales', async (req, res, next) => {
-        if (req.method !== 'GET') return next();
-        try {
-          const url = new URL(req.url, 'http://localhost');
-          const { salesDashboard } = await import('./lib/salesCore.js');
-          const model = await salesDashboard({ force: url.searchParams.get('refresh') === '1' });
-          sendJson(res, 200, { ok: true, ...model });
-        } catch (err) {
-          const msg = (err && err.message) || String(err);
-          console.error('[dev /api/sales] error:', msg);
-          sendJson(res, (err && err.status) || 500, { ok: false, error: msg });
-        }
-      });
-
-      // Sales space chatbot — same engine as api/sales-chat.js in production.
-      server.middlewares.use('/api/sales-chat', async (req, res, next) => {
-        if (req.method !== 'POST') return next();
-        try {
-          const body = await readJson(req);
-          const { handleSalesChat } = await import('./lib/salesChatCore.js');
-          const result = await handleSalesChat(body, 'dev@local');
-          sendJson(res, 200, result);
-        } catch (err) {
-          const msg = (err && err.message) || String(err);
-          console.error('[dev /api/sales-chat] error:', msg);
-          sendJson(res, (err && err.status) || 500, { ok: false, error: msg });
-        }
-      });
-
-      // Marketing space dashboard — same core as api/marketing.js in production.
-      server.middlewares.use('/api/marketing', async (req, res, next) => {
-        if (req.method !== 'GET') return next();
-        try {
-          const url = new URL(req.url, 'http://localhost');
-          const { marketingDashboard } = await import('./lib/marketingCore.js');
-          const model = await marketingDashboard({ force: url.searchParams.get('refresh') === '1' });
-          sendJson(res, 200, { ok: true, ...model });
-        } catch (err) {
-          const msg = (err && err.message) || String(err);
-          console.error('[dev /api/marketing] error:', msg);
-          sendJson(res, (err && err.status) || 500, { ok: false, error: msg });
-        }
-      });
-
-      // Production space dashboard — same core as api/production.js in production.
-      server.middlewares.use('/api/production', async (req, res, next) => {
-        if (req.method !== 'GET') return next();
-        try {
-          const { productionDashboard } = await import('./lib/productionDashCore.js');
-          const model = await productionDashboard();
-          sendJson(res, 200, { ok: true, ...model });
-        } catch (err) {
-          const msg = (err && err.message) || String(err);
-          console.error('[dev /api/production] error:', msg);
-          sendJson(res, (err && err.status) || 500, { ok: false, error: msg });
-        }
-      });
-
-      // Events space chatbot — same engine as api/events-chat.js in production.
-      server.middlewares.use('/api/events-chat', async (req, res, next) => {
-        if (req.method !== 'POST') return next();
-        try {
-          const body = await readJson(req);
-          const { handleEventsChat } = await import('./lib/eventsChatCore.js');
-          const result = await handleEventsChat(body, 'dev@local');
-          sendJson(res, 200, result);
-        } catch (err) {
-          const msg = (err && err.message) || String(err); // sql.js throws strings
-          console.error('[dev /api/events-chat] error:', msg);
-          sendJson(res, (err && err.status) || 500, { ok: false, error: msg });
-        }
-      });
-
-      // Events space dashboard — same core as api/events.js in production.
-      server.middlewares.use('/api/events', async (req, res, next) => {
-        if (req.method !== 'GET') return next();
-        try {
-          const url = new URL(req.url, 'http://localhost');
-          const { eventsDashboard } = await import('./lib/eventsCore.js');
-          const model = await eventsDashboard({ force: url.searchParams.get('refresh') === '1' });
-          sendJson(res, 200, { ok: true, ...model });
-        } catch (err) {
-          console.error('[dev /api/events] error:', err.message);
           sendJson(res, 500, { ok: false, error: err.message });
         }
       });

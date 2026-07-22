@@ -47,7 +47,7 @@ function EventsDashboard() {
   const load = useCallback((refresh) => {
     setLoading(true)
     setError(null)
-    apiFetch('/api/events' + (refresh ? '?refresh=1' : ''))
+    apiFetch('/api/dashboards?space=events' + (refresh ? '&refresh=1' : ''))
       .then(async (r) => {
         const data = await r.json()
         if (!r.ok || !data.ok) throw new Error(data.error || 'Could not load the events dashboard')

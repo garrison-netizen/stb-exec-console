@@ -32,7 +32,7 @@ const STARTER_POOL = [
 export default function EventsChat() {
   return (
     <DeptChat
-      endpoint="/api/events-chat"
+      endpoint="/api/assistant?space=events"
       title="Events Assistant"
       sub="Leads, bookings, revenue, and payments — straight from Triple Seat."
       starterPool={STARTER_POOL}

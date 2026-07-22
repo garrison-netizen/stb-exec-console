@@ -1,26 +1,15 @@
 {
   "functions": {
-    "api/chat.js": {
+    "api/assistant.js": {
       "maxDuration": 300,
       "includeFiles": "node_modules/sql.js/dist/sql-wasm.wasm"
     },
-    "api/events-chat.js": {
-      "maxDuration": 300,
+    "api/dashboards.js": {
+      "maxDuration": 120,
       "includeFiles": "node_modules/sql.js/dist/sql-wasm.wasm"
     },
     "api/mirror-upload.js": {
       "maxDuration": 60
-    },
-    "api/production.js": {
-      "maxDuration": 60,
-      "includeFiles": "node_modules/sql.js/dist/sql-wasm.wasm"
-    },
-    "api/sales.js": {
-      "maxDuration": 120
-    },
-    "api/sales-chat.js": {
-      "maxDuration": 300,
-      "includeFiles": "node_modules/sql.js/dist/sql-wasm.wasm"
     }
   }
 }
