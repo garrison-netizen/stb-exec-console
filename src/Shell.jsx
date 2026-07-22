@@ -20,11 +20,11 @@ const SPACE_DEFS = [
   { key: 'Exec', label: 'Executive', render: () => <App /> },
   { key: 'Finances', label: 'Finances', render: () => <FinancesSpace /> },
   { key: 'Production', label: 'Production', render: (isExec) => <ProductionSpace isExec={isExec} /> },
-  { key: 'Events', label: 'Events', render: (isExec) => <EventsSpace isExec={isExec} /> },
+  { key: 'Events', label: 'Events', render: () => <EventsSpace /> },
   { key: 'Taproom', label: 'Taproom', render: () => <TaproomSpace /> },
   { key: 'Sales', label: 'Sales', render: (isExec) => <SalesSpace isExec={isExec} /> },
   { key: 'Marketing', label: 'Marketing', render: (isExec) => <MarketingSpace isExec={isExec} /> },
-  { key: 'Coffee', label: 'Coffee', render: (isExec) => <CoffeeSpace isExec={isExec} /> },
+  { key: 'Coffee', label: 'Coffee', render: () => <CoffeeSpace /> },
   { key: 'R&D', label: 'R&D', render: () => <RndSpace /> },
 ]
 

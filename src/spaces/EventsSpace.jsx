@@ -34,10 +34,10 @@ function Paid({ yes, label }) {
   )
 }
 
-export default function EventsSpace({ isExec }) {
+export default function EventsSpace() {
+  // Dashboard opened to the department 2026-07-22.
   const tabs = [
-    // Dashboard is Exec-only while being dialed in (API enforces this too).
-    ...(isExec ? [{ key: 'dashboard', label: 'Dashboard', render: () => <EventsDashboard /> }] : []),
+    { key: 'dashboard', label: 'Dashboard', render: () => <EventsDashboard /> },
     { key: 'assistant', label: 'Assistant', render: () => <EventsChat /> },
     ...EOS_TABS,
   ]

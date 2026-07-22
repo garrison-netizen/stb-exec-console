@@ -11,10 +11,10 @@ const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Se
 const money = (n) => '$' + Math.round(n || 0).toLocaleString('en-US')
 const count = (n) => (n == null ? '—' : Number(n).toLocaleString('en-US', { maximumFractionDigits: 1 }))
 
-export default function CoffeeSpace({ isExec }) {
+export default function CoffeeSpace() {
+  // Dashboard opened to the department 2026-07-22.
   const tabs = [
-    // Dashboard is Exec-only while being dialed in (API enforces this too).
-    ...(isExec ? [{ key: 'dashboard', label: 'Dashboard', render: () => <CoffeeDashboard /> }] : []),
+    { key: 'dashboard', label: 'Dashboard', render: () => <CoffeeDashboard /> },
     {
       key: 'assistant',
       label: 'Assistant',
