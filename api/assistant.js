@@ -17,6 +17,10 @@ const SPACES = {
     tag: 'Sales',
     handle: async (body, email) => (await import('../lib/salesChatCore.js')).handleSalesChat(body, email),
   },
+  taproom: {
+    tag: 'Taproom',
+    handle: async (body, email) => (await import('../lib/taproomChatCore.js')).handleTaproomChat(body, email),
+  },
 };
 
 export default async function handler(req, res) {

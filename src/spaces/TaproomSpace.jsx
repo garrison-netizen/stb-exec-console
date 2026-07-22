@@ -1,6 +1,42 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import { apiFetch } from '../Auth.jsx'
 import DeptSpace, { EOS_TABS, EosPlaceholder } from './DeptSpace.jsx'
+import DeptChat from './DeptChat.jsx'
+
+const STARTER_POOL = [
+  // Revenue & rhythm
+  'How is taproom revenue trending vs last year?',
+  'What are our busiest days of the week?',
+  'What was our best single day ever, and what drove it?',
+  'How did this month compare to the same month last year?',
+  'What were our best and worst weeks this year?',
+  'How is average transaction size trending?',
+  // Products
+  'Which beers sell best at the register?',
+  'How are THC drinks doing at the taproom?',
+  'What share of register sales is beer vs everything else?',
+  'Which merch items actually sell?',
+  'How seasonal is coffee at the register?',
+  'What sold most last week?',
+  // Money details
+  'How do tips track with revenue?',
+  'How much sales tax have we collected this year?',
+  'How much of our revenue comes through card vs cash?',
+]
+
+function TaproomChat() {
+  return (
+    <DeptChat
+      endpoint="/api/assistant?space=taproom"
+      title="Taproom Assistant"
+      sub="Register revenue, traffic, and what sells — straight from Clover."
+      starterPool={STARTER_POOL}
+      storagePrefix="stb_tapchat"
+      inputPlaceholder="Ask a taproom question…"
+      freshTitle="When the register data was last loaded"
+    />
+  )
+}
 
 // The Taproom department: Clover register data (daily totals + SKU weeks)
 // from the Brain. Graduated from PlannedSpaces 2026-07-22 when the Clover
@@ -32,17 +68,7 @@ export default function TaproomSpace({ isExec }) {
             />
           ),
         },
-    {
-      key: 'assistant',
-      label: 'Assistant',
-      render: () => (
-        <EosPlaceholder
-          title="Taproom Assistant"
-          note="Read-only analyst over the Clover register data, on the same engine as the other assistants. Follows the dashboard."
-          status="Planned"
-        />
-      ),
-    },
+    { key: 'assistant', label: 'Assistant', render: () => <TaproomChat /> },
     ...EOS_TABS,
   ]
   return <DeptSpace title="Taproom" tabs={tabs} />

@@ -89,6 +89,8 @@ export function notionDevPlugin() {
             result = await (await import('./lib/eventsChatCore.js')).handleEventsChat(body, 'dev@local');
           } else if (space === 'sales') {
             result = await (await import('./lib/salesChatCore.js')).handleSalesChat(body, 'dev@local');
+          } else if (space === 'taproom') {
+            result = await (await import('./lib/taproomChatCore.js')).handleTaproomChat(body, 'dev@local');
           } else {
             return sendJson(res, 400, { ok: false, error: 'Unknown assistant: ' + space });
           }
