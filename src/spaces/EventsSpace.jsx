@@ -120,15 +120,15 @@ function DashboardBody({ m }) {
           )}
         </div>
         <div className="pe-kpi">
-          <div className="pe-kpi-value">{money(a.unpaidBalanceTotal)}</div>
-          <div className="pe-kpi-label">unpaid balances · {a.unpaidBalanceCount} past events</div>
+          <div className="pe-kpi-value">{money(k.bookedForward)}</div>
+          <div className="pe-kpi-label">booked ahead · {k.bookedForwardCount} future events</div>
         </div>
       </div>
 
-      {(a.unpaidBalances.length > 0 || a.unpaidDeposits.length > 0 || a.staleLeads.length > 0) && (
+      {(m.paymentsSynced && (a.unpaidBalances.length > 0 || a.unpaidDeposits.length > 0)) || a.staleLeads.length > 0 ? (
         <section className="pe-section">
           <h2>Needs attention</h2>
-          {a.unpaidBalances.length > 0 && (
+          {m.paymentsSynced && a.unpaidBalances.length > 0 && (
             <>
               <h3>
                 Unpaid balances — {a.unpaidBalanceCount} past events, {money(a.unpaidBalanceTotal)} outstanding
@@ -147,7 +147,7 @@ function DashboardBody({ m }) {
               </table>
             </>
           )}
-          {a.unpaidDeposits.length > 0 && (
+          {m.paymentsSynced && a.unpaidDeposits.length > 0 && (
             <>
               <h3>Upcoming revenue events with no deposit — next {m.upcomingDays} days ({a.unpaidDepositCount})</h3>
               <table className="pe-table">
@@ -186,20 +186,21 @@ function DashboardBody({ m }) {
             </>
           )}
         </section>
-      )}
+      ) : null}
 
       <section className="pe-section">
         <h2>Upcoming events — next {m.upcomingDays} days</h2>
         {m.upcoming.length === 0 && <p className="pe-note">Nothing on the books in this window.</p>}
         {m.upcoming.length > 0 && (
           <table className="pe-table">
-            <thead><tr><th>Date</th><th>Event</th><th className="num">Headcount</th><th className="num">Revenue</th><th>Deposit</th><th>Balance</th><th>Rep</th></tr></thead>
+            <thead><tr><th>Date</th><th>Event</th><th className="num">Headcount</th><th className="num">Revenue</th>{m.paymentsSynced && <><th>Deposit</th><th>Balance</th></>}<th>Rep</th></tr></thead>
             <tbody>
               {m.upcoming.map((u, i) => (
                 <tr key={i}>
                   <td>{u.date}</td><td className="ev" title={u.title}>{u.title}</td>
                   <td className="num">{u.headcount ?? '—'}</td><td className="num">{money(u.revenue)}</td>
-                  <td><Paid yes={u.depositPaid} /></td><td><Paid yes={u.balancePaid} /></td><td>{u.rep || '—'}</td>
+                  {m.paymentsSynced && <><td><Paid yes={u.depositPaid} /></td><td><Paid yes={u.balancePaid} /></td></>}
+                  <td>{u.rep || '—'}</td>
                 </tr>
               ))}
             </tbody>
@@ -251,6 +252,7 @@ function DashboardBody({ m }) {
       <p className="pe-note pe-footer">
         Data: Private Events databases, Triple Seat daily 6am sync. Revenue = actual when recorded,
         else quoted; cancelled events excluded; bar sales shown separately.
+        {!m.paymentsSynced && ' Deposit/balance status is not shown — Triple Seat’s bookings feed doesn’t carry payment data; it arrives with the payments pipeline.'}
       </p>
     </>
   )
