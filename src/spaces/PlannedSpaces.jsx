@@ -37,23 +37,6 @@ export function TaproomSpace() {
   )
 }
 
-export function SalesSpace() {
-  return (
-    <DeptSpace
-      title="Sales"
-      tabs={[
-        tab('dashboard', 'Dashboard', 'Sales Dashboard',
-          'Distribution numbers from the VIP marts in the Brain — monthly look first (the first live mart load is the acceptance test), then a weekly view alongside the Brain’s monthly grain.',
-          'Next up'),
-        tab('assistant', 'Assistant', 'Sales Assistant',
-          'Read-only analyst over the VIP marts once the loads are proven. Same engine as the other assistants.',
-          'Planned'),
-        ...EOS_TABS,
-      ]}
-    />
-  )
-}
-
 export function RndSpace() {
   return (
     <DeptSpace

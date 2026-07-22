@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react'
 import App from './App.jsx'
 import ProductionSpace from './spaces/ProductionSpace.jsx'
 import EventsSpace from './spaces/EventsSpace.jsx'
-import { TaproomSpace, SalesSpace, RndSpace } from './spaces/PlannedSpaces.jsx'
+import { TaproomSpace, RndSpace } from './spaces/PlannedSpaces.jsx'
+import SalesSpace from './spaces/SalesSpace.jsx'
 import MarketingSpace from './spaces/MarketingSpace.jsx'
 import { apiFetch, currentEmail, signOut } from './Auth.jsx'
 
@@ -18,7 +19,7 @@ const SPACE_DEFS = [
   { key: 'Production', label: 'Production', render: (isExec) => <ProductionSpace isExec={isExec} /> },
   { key: 'Events', label: 'Events', render: (isExec) => <EventsSpace isExec={isExec} /> },
   { key: 'Taproom', label: 'Taproom', render: () => <TaproomSpace /> },
-  { key: 'Sales', label: 'Sales', render: () => <SalesSpace /> },
+  { key: 'Sales', label: 'Sales', render: (isExec) => <SalesSpace isExec={isExec} /> },
   { key: 'Marketing', label: 'Marketing', render: (isExec) => <MarketingSpace isExec={isExec} /> },
   { key: 'R&D', label: 'R&D', render: () => <RndSpace /> },
 ]
