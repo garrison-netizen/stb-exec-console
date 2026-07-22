@@ -120,7 +120,9 @@ function Body({ m }) {
             {monthly.map((r, i) => {
               const future = i + 1 > thisMonth
               const maxT = Math.max(...monthly.map((x) => Math.max(x.total, x.lastYear)))
-              const likeForLike = r.wholesale + r.events
+              // Months where LY has taproom data compare all-streams; earlier
+              // months compare wholesale+events (LY taproom history starts Mar 2025).
+              const comparable = r.lyHasTaproom ? r.total : r.wholesale + r.events
               return (
                 <tr key={i}>
                   <td>{MONTH_NAMES[Number(r.month) - 1]}{future ? ' (booked ahead)' : ''}</td>
@@ -129,7 +131,7 @@ function Body({ m }) {
                   <td className="num">{future || !r.taproom ? '—' : money(r.taproom)}</td>
                   <td className="num pe-heat" style={future ? undefined : heat(r.total, maxT)}>{money(r.total)}</td>
                   <td className="num">{future || !r.lastYear ? '—' : money(r.lastYear)}</td>
-                  <td className="num">{future || !(r.lastYear || likeForLike) ? '—' : <Delta value={likeForLike - r.lastYear} />}</td>
+                  <td className="num">{future || !(r.lastYear || comparable) ? '—' : <Delta value={comparable - r.lastYear} />}</td>
                 </tr>
               )
             })}
@@ -141,8 +143,9 @@ function Body({ m }) {
         Signal layer, not the books: Ekos invoice subtotals (wholesale) + Tripleseat event revenue
         (actual else quoted, cancelled excluded) + Clover taproom net (after discounts, before tax/tips
         {m.taproomFrom ? `; history loading, coverage since ${m.taproomFrom}` : ''}).
-        *Δ vs {m.year - 1} compares wholesale+events only — taproom has no prior-year data until the
-        Clover backfill completes. Excluded: QBO refunds/adjustments and non-beverage income.
+        *Δ vs {m.year - 1}: months from Mar onward compare all streams (taproom history reaches Mar
+        2025); Jan–Feb compare wholesale+events only. The headline % stays wholesale+events
+        like-for-like. Excluded: QBO refunds/adjustments and non-beverage income.
       </p>
     </>
   )

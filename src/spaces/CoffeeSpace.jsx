@@ -98,7 +98,7 @@ function Body({ m }) {
           <div className="pe-kpi-value">{m.register ? money(m.register.total) : '—'}</div>
           <div className="pe-kpi-label">
             {m.register
-              ? 'register coffee sales (Clover, coverage window) · Shopify pending'
+              ? `register coffee sales ${m.register.totalNote || ''} · Shopify pending`
               : 'coffee revenue — share the Clover DBs with the Console integration'}
           </div>
         </div>
@@ -123,7 +123,27 @@ function Body({ m }) {
 
       {m.register && (
         <section className="pe-section">
-          <h2>Register coffee sales — by week (Clover)</h2>
+          <h2>Register coffee sales (Clover)</h2>
+          {m.register.monthly.length > 0 && (
+            <>
+              <h3>By month — history (Mar 2025 → Apr 2026)</h3>
+              <table className="pe-table pe-table-narrow">
+                <thead><tr><th>Month</th><th className="num">Net revenue</th></tr></thead>
+                <tbody>
+                  {m.register.monthly.map((r, i) => {
+                    const maxM = Math.max(...m.register.monthly.map((x) => x.revenue))
+                    return (
+                      <tr key={i}>
+                        <td>{r.month}</td>
+                        <td className="num pe-heat" style={maxM > 0 ? { backgroundImage: `linear-gradient(90deg, var(--navy-50) ${Math.min(100, (100 * r.revenue) / maxM)}%, transparent ${Math.min(100, (100 * r.revenue) / maxM)}%)` } : undefined}>{money(r.revenue)}</td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </>
+          )}
+          <h3>Recent weeks — living feed</h3>
           <table className="pe-table pe-table-narrow">
             <thead><tr><th>Week of</th><th className="num">Revenue</th></tr></thead>
             <tbody>

@@ -104,6 +104,11 @@ function Body({ m }) {
         <div className="pe-kpi">
           <div className="pe-kpi-value">{money(k.net)}</div>
           <div className="pe-kpi-label">net register revenue · {m.coverage.tradingDays} trading days in window</div>
+          {m.yoy && m.yoy.pct !== null && (
+            <div className={'pe-kpi-delta ' + (m.yoy.pct >= 0 ? 'ok' : 'bad')}>
+              {m.yoy.pct >= 0 ? '▲' : '▼'} {Math.abs(m.yoy.pct)}% last 28 days vs same period last year ({money(m.yoy.lastYear)})
+            </div>
+          )}
         </div>
         <div className="pe-kpi">
           <div className="pe-kpi-value">{money(k.avgDay)}</div>
@@ -135,7 +140,7 @@ function Body({ m }) {
       </section>
 
       <section className="pe-section">
-        <h2>What sells — categories &amp; top SKUs (coverage window)</h2>
+        <h2>What sells — categories &amp; top SKUs (since {m.weekReliableFrom})</h2>
         <table className="pe-table pe-table-narrow">
           <thead><tr><th>Category</th><th className="num">Register revenue</th></tr></thead>
           <tbody>
@@ -196,14 +201,11 @@ function Body({ m }) {
         </table>
       </section>
 
-      {!m.laborAvailable && (
-        <p className="pe-note">Labor (hours &amp; cost vs revenue) appears here when the Clover labor feed starts flowing.</p>
-      )}
-
       <p className="pe-note pe-footer">
-        Data: Clover register via the Brain (Taproom Daily + SKU-by-week). Net = after discounts/refunds,
-        before tax and tips. Category/SKU figures are register line-item revenue. History is
-        backfilling toward May 2025{m.backfillComplete ? ' (complete)' : ' — comparisons vs last year unlock when it lands'}.
+        Data: Clover register via the Brain (Taproom Daily since Mar 2025, audited to Clover's own
+        reports; SKU weeks reliable since {m.weekReliableFrom}). Net = gross − tax; pre-May-2026
+        history was rebuilt from payment records (discounts unavailable, refund days read slightly
+        high). Labor isn't tracked here — staff don't clock in via Clover.
       </p>
     </>
   )
