@@ -53,21 +53,10 @@ const heat = (value, max) =>
     ? { backgroundImage: `linear-gradient(90deg, var(--navy-50) ${Math.min(100, (100 * value) / max)}%, transparent ${Math.min(100, (100 * value) / max)}%)` }
     : undefined
 
-export default function TaproomSpace({ isExec }) {
+export default function TaproomSpace() {
+  // Dashboard opened to the department 2026-07-22.
   const tabs = [
-    isExec
-      ? { key: 'dashboard', label: 'Dashboard', render: () => <TaproomDashboard /> }
-      : {
-          key: 'dashboard',
-          label: 'Dashboard',
-          render: () => (
-            <EosPlaceholder
-              title="Taproom Dashboard"
-              note="Clover is live and history is loading. The dashboard is in final checks and opens here shortly."
-              status="Next up"
-            />
-          ),
-        },
+    { key: 'dashboard', label: 'Dashboard', render: () => <TaproomDashboard /> },
     { key: 'assistant', label: 'Assistant', render: () => <TaproomChat /> },
     ...EOS_TABS,
   ]

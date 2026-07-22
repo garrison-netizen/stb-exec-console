@@ -16,7 +16,7 @@ const SPACES = {
   sales: { tag: 'Exec', load: async (force) => (await import('../lib/salesCore.js')).salesDashboard({ force }) },
   finances: { tag: 'Exec', load: async () => (await import('../lib/financeCore.js')).financesDashboard() },
   coffee: { tag: 'Coffee', load: async () => (await import('../lib/coffeeCore.js')).coffeeDashboard() },
-  taproom: { tag: 'Exec', load: async (force) => (await import('../lib/taproomCore.js')).taproomDashboard({ force }) },
+  taproom: { tag: 'Taproom', load: async (force) => (await import('../lib/taproomCore.js')).taproomDashboard({ force }) },
 };
 
 export default async function handler(req, res) {
