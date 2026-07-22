@@ -28,7 +28,9 @@ const SPACE_DEFS = [
   { key: 'R&D', label: 'R&D', render: () => <RndSpace /> },
 ]
 
-const LINKS = [
+// Annexed app links — shown only to holders of the matching Tools tag
+// (me.apps from /api/me; Exec holds both).
+const LINK_DEFS = [
   { label: 'Calendar', href: import.meta.env.VITE_CALENDAR_URL },
   { label: 'Calculator', href: import.meta.env.VITE_CALCULATOR_URL },
 ].filter((l) => l.href)
@@ -96,7 +98,7 @@ export default function Shell() {
                 {s.label}
               </button>
             ))}
-          {LINKS.map((l) => (
+          {LINK_DEFS.filter((l) => (me.apps || []).includes(l.label)).map((l) => (
             <a key={l.label} className="shell-tab shell-link" href={l.href} target="_blank" rel="noreferrer">
               {l.label} ↗
             </a>

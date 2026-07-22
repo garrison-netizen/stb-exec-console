@@ -39,7 +39,7 @@ export function notionDevPlugin() {
       // Dev user has every space; production resolves this from the allow-list.
       server.middlewares.use('/api/me', (req, res, next) => {
         if (req.method !== 'GET') return next();
-        sendJson(res, 200, { ok: true, email: 'dev@local', spaces: ['Exec', 'Finances', 'Production', 'Events', 'Taproom', 'Sales', 'Marketing', 'Coffee', 'R&D'] });
+        sendJson(res, 200, { ok: true, email: 'dev@local', spaces: ['Exec', 'Finances', 'Production', 'Events', 'Taproom', 'Sales', 'Marketing', 'Coffee', 'R&D'], apps: ['Calendar', 'Calculator'] });
       });
 
       // Dashboards router — same cores as api/dashboards.js in production.
