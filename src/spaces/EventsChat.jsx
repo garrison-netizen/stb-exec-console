@@ -24,6 +24,10 @@ const STARTER_POOL = [
   // Payments
   'Which past events still show an unpaid balance?',
   'Which upcoming events have no deposit recorded?',
+  // Quotes (live calculator logic)
+  'Quote a SpindleBarn wedding: 150 guests, 120 over 21, 5 hours, open bar basic.',
+  'What would a 40-person corporate happy hour in the Beer Garden cost?',
+  'How much is the Entire Facility for 250 people with a premium open bar?',
   // Seasonal
   'How does this summer compare to last summer for bookings?',
   'Which months are historically our strongest for events?',
