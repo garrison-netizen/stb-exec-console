@@ -7,7 +7,7 @@ import SalesSpace from './spaces/SalesSpace.jsx'
 import MarketingSpace from './spaces/MarketingSpace.jsx'
 import FinancesSpace from './spaces/FinancesSpace.jsx'
 import CoffeeSpace from './spaces/CoffeeSpace.jsx'
-import { apiFetch, currentEmail, signOut } from './Auth.jsx'
+import { apiFetch, currentEmail, signOut, getToken } from './Auth.jsx'
 
 // The STB App shell: asks the server which spaces this user may enter and
 // renders role-scoped navigation. Exec = the existing Executive Console.
@@ -99,7 +99,23 @@ export default function Shell() {
               </button>
             ))}
           {LINK_DEFS.filter((l) => (me.apps || []).includes(l.label)).map((l) => (
-            <a key={l.label} className="shell-tab shell-link" href={l.href} target="_blank" rel="noreferrer">
+            <a
+              key={l.label}
+              className="shell-tab shell-link"
+              href={l.href}
+              target="_blank"
+              rel="noreferrer"
+              // Single sign-on handoff: pass the current (already-verified)
+              // Google token in the URL fragment so the target app skips its
+              // sign-in screen. Fragments never reach servers or logs; the
+              // target strips it immediately and verifies server-side.
+              onClick={(e) => {
+                const t = getToken()
+                if (!t) return // local dev / no token — plain link
+                e.preventDefault()
+                window.open(l.href + '#sso=' + encodeURIComponent(t), '_blank', 'noreferrer')
+              }}
+            >
               {l.label} ↗
             </a>
           ))}
