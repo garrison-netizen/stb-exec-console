@@ -9,3 +9,6 @@ dist
 .commit-msg.tmp
 .env*
 .env.pulled
+
+# Per-session repo claim (multi-session protocol)
+.session-lock.json
