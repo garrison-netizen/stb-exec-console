@@ -69,11 +69,11 @@ function SalesChat() {
   )
 }
 
-export default function SalesSpace() {
-  // Dashboard signed off to the Sales tag 2026-07-23 (API enforces via
-  // requireSpace 'Sales'); anyone who can see the Sales space sees it.
+export default function SalesSpace({ isExec }) {
+  // Dashboard is Exec-only while being dialed in (API enforces this too).
+  // Sales-tag holders (e.g. Amy) get the Assistant; no dashboard yet.
   const tabs = [
-    { key: 'dashboard', label: 'Dashboard', render: () => <SalesDashboard /> },
+    ...(isExec ? [{ key: 'dashboard', label: 'Dashboard', render: () => <SalesDashboard /> }] : []),
     { key: 'assistant', label: 'Assistant', render: () => <SalesChat /> },
     ...EOS_TABS,
   ]
