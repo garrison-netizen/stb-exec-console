@@ -1242,3 +1242,6 @@ body {
 /* ---- Two tables side by side (weekly momentum), stacking on narrow ---- */
 .pe-two-col { display: flex; flex-wrap: wrap; gap: 16px; }
 .pe-two-col > table { flex: 1 1 280px; min-width: 0; }
+
+/* ---- Still-settling weekly rows: shown but visibly provisional ---- */
+.pe-table tr.pe-settling td { color: var(--muted); font-style: italic; }

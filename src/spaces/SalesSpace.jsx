@@ -294,38 +294,42 @@ function Body({ m }) {
   )
 }
 
-// Recent weekly depletions (Mart C). Complete weeks only in the trend table;
-// the newest week is partial at pull time (VIP catches it mid-week, next pull
-// restates it) so it is shown separately and clearly labeled — never charted
-// alongside the complete weeks, where it would read as a collapse.
+// Recent weekly depletions (Mart C). Every week's actual number is shown, but
+// the newest two are still SETTLING (the latest is partial; the one before is
+// still being restated as distributors report late) — they're flagged and
+// kept out of the trend/momentum math so a still-filling week never reads as a
+// real decline. (Garrison's call, 2026-07-23.)
 function WeeklySection({ w }) {
-  const recent = [...w.series].reverse() // newest complete week first
-  const maxCE = Math.max(...w.series.map((x) => x.ce), 0)
+  // Heat bars scale to the settled weeks so a still-filling week's short bar
+  // reads as "not yet in" rather than shrinking every other week's bar.
+  const settledMax = Math.max(...w.series.filter((x) => !x.settling).map((x) => x.ce), 0)
+  const nSettling = w.settlingWeeks ? w.settlingWeeks.length : 0
   const mom = w.momentum
   return (
     <section className="pe-section">
-      <h2>Recent weekly depletions{w.windowLabel ? ` — ${w.windowLabel}` : ''}</h2>
+      <h2>Recent weekly depletions{w.windowLabel ? ` — trend ${w.windowLabel}` : ''}</h2>
       <table className="pe-table pe-table-narrow">
         <thead><tr><th>Week ending</th><th className="num">CE</th></tr></thead>
         <tbody>
-          {recent.map((wk, i) => (
-            <tr key={i}>
-              <td title={wk.label}>{wk.week}</td>
-              <td className="num pe-heat" style={heat(wk.ce, maxCE)}>{ce(wk.ce)}</td>
+          {w.series.map((wk, i) => (
+            <tr key={i} className={wk.settling ? 'pe-settling' : undefined}>
+              <td title={wk.label}>{wk.week}{wk.settling ? ' *' : ''}</td>
+              <td className="num pe-heat" style={wk.settling ? undefined : heat(wk.ce, settledMax)}>{ce(wk.ce)}</td>
             </tr>
           ))}
         </tbody>
       </table>
-      {w.provisional && (
+      {nSettling > 0 && (
         <p className="pe-note">
-          In-progress week ({w.provisional.label}): {ce(w.provisional.ce)} CE so far — <strong>partial</strong>,
-          excluded from the trend above. Next weekly pull completes it.
+          * The newest {nSettling === 1 ? 'week is' : `${nSettling} weeks are`} still <strong>settling</strong> —
+          the latest is a partial week and distributor reporting lags, so these numbers rise as later pulls come in.
+          They're shown for visibility but excluded from the trend and momentum below.
         </p>
       )}
 
       {mom && (mom.gainers.length > 0 || mom.decliners.length > 0) && (
         <>
-          <h3>Brand momentum — last complete week vs prior {mom.baseWeeks}-week average</h3>
+          <h3>Brand momentum — last settled week vs prior {mom.baseWeeks}-week average</h3>
           <div className="pe-two-col">
             {mom.gainers.length > 0 && (
               <table className="pe-table">
@@ -357,8 +361,9 @@ function WeeklySection({ w }) {
             )}
           </div>
           <p className="pe-note">
-            Momentum compares the latest <em>complete</em> week to the mean of the {mom.baseWeeks} weeks
-            before it (the partial week is excluded). Weekly grain has no year-over-year.
+            Momentum compares the latest <em>settled</em> week to the mean of the {mom.baseWeeks} weeks
+            before it (the newest {nSettling} settling {nSettling === 1 ? 'week is' : 'weeks are'} excluded).
+            Weekly grain has no year-over-year.
           </p>
         </>
       )}
