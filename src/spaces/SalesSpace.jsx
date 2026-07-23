@@ -38,6 +38,10 @@ const STARTER_POOL = [
   // Distributors
   'Which distributors move the most volume for us?',
   'How is each distributor trending vs last year?',
+  // Weekly momentum (Mart C)
+  'Which brands are gaining momentum over the last few weeks?',
+  'How has weekly volume trended over the last 12 weeks?',
+  'Which brands slowed down most in the last complete week?',
   // Accounts
   'Which accounts grew the most this year?',
   'Which accounts are declining the fastest?',
@@ -224,6 +228,8 @@ function Body({ m }) {
         </table>
       </section>
 
+      {m.weekly && m.weekly.series.length > 0 && <WeeklySection w={m.weekly} />}
+
       <section className="pe-section">
         <h2>Top accounts — {m.year} YTD</h2>
         <table className="pe-table">
@@ -280,9 +286,82 @@ function Body({ m }) {
       )}
 
       <p className="pe-note pe-footer">
-        Data: VIP marts in the Brain (ADR-013), refreshed monthly from VIP depletion exports.
-        CE = case-equivalent units. Distribution only — taproom sales are not in this data.
+        Data: VIP marts in the Brain — annual/account marts (ADR-013) refreshed monthly,
+        weekly mart (ADR-015) refreshed weekly. CE = case-equivalent units.
+        Distribution only — taproom sales are not in this data.
       </p>
     </>
+  )
+}
+
+// Recent weekly depletions (Mart C). Complete weeks only in the trend table;
+// the newest week is partial at pull time (VIP catches it mid-week, next pull
+// restates it) so it is shown separately and clearly labeled — never charted
+// alongside the complete weeks, where it would read as a collapse.
+function WeeklySection({ w }) {
+  const recent = [...w.series].reverse() // newest complete week first
+  const maxCE = Math.max(...w.series.map((x) => x.ce), 0)
+  const mom = w.momentum
+  return (
+    <section className="pe-section">
+      <h2>Recent weekly depletions{w.windowLabel ? ` — ${w.windowLabel}` : ''}</h2>
+      <table className="pe-table pe-table-narrow">
+        <thead><tr><th>Week ending</th><th className="num">CE</th></tr></thead>
+        <tbody>
+          {recent.map((wk, i) => (
+            <tr key={i}>
+              <td title={wk.label}>{wk.week}</td>
+              <td className="num pe-heat" style={heat(wk.ce, maxCE)}>{ce(wk.ce)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      {w.provisional && (
+        <p className="pe-note">
+          In-progress week ({w.provisional.label}): {ce(w.provisional.ce)} CE so far — <strong>partial</strong>,
+          excluded from the trend above. Next weekly pull completes it.
+        </p>
+      )}
+
+      {mom && (mom.gainers.length > 0 || mom.decliners.length > 0) && (
+        <>
+          <h3>Brand momentum — last complete week vs prior {mom.baseWeeks}-week average</h3>
+          <div className="pe-two-col">
+            {mom.gainers.length > 0 && (
+              <table className="pe-table">
+                <thead><tr><th>Gaining brand</th><th className="num">Wk CE</th><th className="num">Δ vs avg</th></tr></thead>
+                <tbody>
+                  {mom.gainers.map((b, i) => (
+                    <tr key={i}>
+                      <td className="ev" title={b.brand}>{b.brand}</td>
+                      <td className="num">{ce(b.latestCE)}</td>
+                      <td className="num"><Delta value={b.delta} /></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+            {mom.decliners.length > 0 && (
+              <table className="pe-table">
+                <thead><tr><th>Slowing brand</th><th className="num">Wk CE</th><th className="num">Δ vs avg</th></tr></thead>
+                <tbody>
+                  {mom.decliners.map((b, i) => (
+                    <tr key={i}>
+                      <td className="ev" title={b.brand}>{b.brand}</td>
+                      <td className="num">{ce(b.latestCE)}</td>
+                      <td className="num"><Delta value={b.delta} /></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+          <p className="pe-note">
+            Momentum compares the latest <em>complete</em> week to the mean of the {mom.baseWeeks} weeks
+            before it (the partial week is excluded). Weekly grain has no year-over-year.
+          </p>
+        </>
+      )}
+    </section>
   )
 }
