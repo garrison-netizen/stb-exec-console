@@ -5,7 +5,8 @@
 // Per-space access: 'Exec' = still being dialed in (Garrison only); a
 // department tag = signed off and open to that department's holders.
 // Events + Coffee opened 2026-07-22 (Garrison: "turn on the dashboards for
-// Marin").
+// Marin"). Sales opened 2026-07-23 (production ↔ sales meet biweekly; the
+// production manager needs a direct read on depletions).
 
 import { requireSpace } from '../lib/auth.js';
 
@@ -13,7 +14,7 @@ const SPACES = {
   events: { tag: 'Events', load: async (force) => (await import('../lib/eventsCore.js')).eventsDashboard({ force }) },
   production: { tag: 'Exec', load: async () => (await import('../lib/productionDashCore.js')).productionDashboard() },
   marketing: { tag: 'Exec', load: async (force) => (await import('../lib/marketingCore.js')).marketingDashboard({ force }) },
-  sales: { tag: 'Exec', load: async (force) => (await import('../lib/salesCore.js')).salesDashboard({ force }) },
+  sales: { tag: 'Sales', load: async (force) => (await import('../lib/salesCore.js')).salesDashboard({ force }) },
   finances: { tag: 'Exec', load: async () => (await import('../lib/financeCore.js')).financesDashboard() },
   coffee: { tag: 'Coffee', load: async () => (await import('../lib/coffeeCore.js')).coffeeDashboard() },
   taproom: { tag: 'Taproom', load: async (force) => (await import('../lib/taproomCore.js')).taproomDashboard({ force }) },
