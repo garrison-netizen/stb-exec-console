@@ -94,7 +94,10 @@ function TaproomDashboard() {
       {model && (
         <>
           <div className="pe-asof">
-            Clover data {model.coverage.from} → {model.coverage.to}
+            Register data {model.coverage.from} → {model.coverage.to}
+            {model.coverage.arryvedTradingDays > 0
+              ? ` (Arryved through ${model.windows.cloverFrom}, Clover after)`
+              : ''}
             {model.backfillComplete ? '' : ' (history still loading backward)'} ·{' '}
             <button className="pe-refresh" onClick={() => load(true)} disabled={loading}>
               {loading ? 'Refreshing…' : 'Refresh'}
@@ -127,7 +130,12 @@ function Body({ m }) {
         </div>
         <div className="pe-kpi">
           <div className="pe-kpi-value">{money(k.avgDay)}</div>
-          <div className="pe-kpi-label">average per trading day · {count(k.transactions)} transactions</div>
+          {/* avgDay spans all history; the transaction count cannot — Arryved
+              rows have no transaction column. Qualify it rather than blend. */}
+          <div className="pe-kpi-label">
+            average per trading day · {count(k.transactions)} transactions
+            {m.coverage.arryvedTradingDays > 0 ? ` since ${m.windows.cloverFrom}` : ''}
+          </div>
         </div>
         <div className="pe-kpi">
           <div className="pe-kpi-value">{k.bestDay ? money(k.bestDay.net) : '—'}</div>
@@ -135,7 +143,10 @@ function Body({ m }) {
         </div>
         <div className="pe-kpi">
           <div className="pe-kpi-value">{money(k.tips)}</div>
-          <div className="pe-kpi-label">tips · {k.cardPct != null ? `${k.cardPct}% card` : 'tender split n/a'}</div>
+          <div className="pe-kpi-label">
+            tips{m.coverage.arryvedTradingDays > 0 ? ` since ${m.windows.cloverFrom}` : ''} ·{' '}
+            {k.cardPct != null ? `${k.cardPct}% card` : 'tender split n/a'}
+          </div>
         </div>
       </div>
 
@@ -185,6 +196,7 @@ function Body({ m }) {
 
       <section className="pe-section">
         <h2>Rhythm — average net by day of week</h2>
+        <p className="pe-note">Trailing 52 weeks, so the profile tracks how the taproom trades now rather than averaging across its whole history.</p>
         <table className="pe-table pe-table-narrow">
           <thead><tr><th>Day</th><th className="num">Avg net</th><th className="num">Days</th></tr></thead>
           <tbody>
