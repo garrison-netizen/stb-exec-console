@@ -44,6 +44,21 @@ export default async function handler(req, res) {
   } catch (err) {
     const msg = (err && err.message) || String(err); // sql.js throws strings
     console.error(`[/api/assistant ${space}] error:`, msg);
+    // Failures that never reached the chat engine (data source down, missing
+    // config) still count as the user not getting an answer — record them.
+    if (!err.logged) {
+      const msgs = (req.body && req.body.messages) || [];
+      const last = msgs.filter((m) => m && m.role === 'user').pop();
+      const { logTurn } = await import('../lib/assistantLog.js');
+      logTurn({
+        space,
+        email: user.email,
+        conversationId: (req.body && req.body.conversationId) || null,
+        turn: msgs.filter((m) => m && m.role === 'user').length,
+        question: last && last.content,
+        error: msg,
+      });
+    }
     return res.status((err && err.status) || 500).json({ ok: false, error: msg });
   }
 }

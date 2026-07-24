@@ -64,6 +64,8 @@ export function notionDevPlugin() {
             model = await (await import('./lib/coffeeCore.js')).coffeeDashboard();
           } else if (space === 'taproom') {
             model = await (await import('./lib/taproomCore.js')).taproomDashboard({ force });
+          } else if (space === 'audit') {
+            model = await (await import('./lib/auditCore.js')).assistantAudit({ force });
           } else {
             return sendJson(res, 400, { ok: false, error: 'Unknown dashboard: ' + space });
           }

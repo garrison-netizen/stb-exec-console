@@ -5,9 +5,10 @@ import { apiFetch, currentEmail } from '../Auth.jsx'
 
 // Shared department chat surface: Claude-style conversation log over a
 // space-specific read-only endpoint. Conversations persist per-user in this
-// browser (localStorage keyed by storagePrefix + signed-in email) — nothing
-// chat-related is stored server-side. ProductionChat and EventsChat are thin
-// wrappers that supply endpoint, copy, and starter questions.
+// browser (localStorage keyed by storagePrefix + signed-in email); the server
+// separately keeps a query log of each turn for the Assistant Audit.
+// ProductionChat and EventsChat are thin wrappers that supply endpoint, copy,
+// and starter questions.
 
 const MAX_CONVOS = 30
 const MAX_MESSAGES = 80
@@ -136,7 +137,9 @@ export default function DeptChat({
       const res = await apiFetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: convo.messages }),
+        // conversationId lets the server-side query log tell a fresh question
+        // from the same question re-asked (the Assistant Audit's key signal).
+        body: JSON.stringify({ messages: convo.messages, conversationId: convo.id }),
       })
       // The platform can answer with plain text (timeouts, gateway errors) —
       // never assume JSON, and translate those cases into human language.

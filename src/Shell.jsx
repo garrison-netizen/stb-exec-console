@@ -8,6 +8,7 @@ import SalesSpace from './spaces/SalesSpace.jsx'
 import MarketingSpace from './spaces/MarketingSpace.jsx'
 import FinancesSpace from './spaces/FinancesSpace.jsx'
 import CoffeeSpace from './spaces/CoffeeSpace.jsx'
+import AuditSpace from './spaces/AuditSpace.jsx'
 import { apiFetch, currentEmail, signOut, getToken } from './Auth.jsx'
 
 // The STB App shell: asks the server which spaces this user may enter and
@@ -28,6 +29,11 @@ const SPACE_DEFS = [
   { key: 'Coffee', label: 'Coffee', render: () => <CoffeeSpace /> },
   { key: 'R&D', label: 'R&D', render: () => <RndSpace /> },
 ]
+
+// Admin surfaces: not departments, and never opened to a department tag.
+// The audit shows other people's questions verbatim, so it is Exec-only both
+// here and server-side (api/dashboards.js 'audit' carries tag 'Exec').
+const ADMIN_DEFS = [{ key: '__audit', label: 'Assistant Audit', render: () => <AuditSpace /> }]
 
 // Annexed app links — shown only to holders of the matching Tools tag
 // (me.apps from /api/me; Exec holds both).
@@ -78,7 +84,8 @@ export default function Shell() {
     )
   }
 
-  const available = SPACE_DEFS.filter((s) => me.spaces.includes(s.key))
+  const isExec = me.spaces.includes('Exec')
+  const available = SPACE_DEFS.filter((s) => me.spaces.includes(s.key)).concat(isExec ? ADMIN_DEFS : [])
   const current = available.find((s) => s.key === active) || available[0]
   const email = me.email || currentEmail() || 'dev'
 
@@ -135,7 +142,7 @@ export default function Shell() {
             className="shell-space"
             style={{ display: current && current.key === s.key ? 'block' : 'none' }}
           >
-            {s.render(me.spaces.includes('Exec'))}
+            {s.render(isExec)}
           </div>
         ))}
       </div>

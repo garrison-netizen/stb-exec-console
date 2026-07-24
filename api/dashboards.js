@@ -19,6 +19,9 @@ const SPACES = {
   finances: { tag: 'Exec', load: async () => (await import('../lib/financeCore.js')).financesDashboard() },
   coffee: { tag: 'Coffee', load: async () => (await import('../lib/coffeeCore.js')).coffeeDashboard() },
   taproom: { tag: 'Taproom', load: async (force) => (await import('../lib/taproomCore.js')).taproomDashboard({ force }) },
+  // Assistant Audit — what the department assistants are struggling with.
+  // Exec-only, permanently: it contains other people's questions verbatim.
+  audit: { tag: 'Exec', load: async (force) => (await import('../lib/auditCore.js')).assistantAudit({ force }) },
 };
 
 export default async function handler(req, res) {
