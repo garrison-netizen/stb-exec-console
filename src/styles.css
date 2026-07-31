@@ -16,7 +16,10 @@
   --brass-100: #f4ead6;
   --cream: #f4f1ea;
   --ink: #26303f;
-  --muted: #6d7788;
+  /* #6d7788 measured 4.01:1 on the cream page ground — under the 4.5:1 floor
+     for normal text. Canonical value is #5f6a71 (4.92 cream / 5.55 white /
+     4.90 navy-50). Source of truth: stb-consumers/design-system/stb-tokens.css */
+  --muted: #5f6a71;
   --line: #e3e6ec;
   --ok: #2e9e6b;
   --warn: #c07f1f;
